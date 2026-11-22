@@ -669,6 +669,13 @@
       border-color: #cbd5e1 !important;
       color: #090d16 !important;
     }
+    html:not(.dark) #scanCameraLabel {
+      color: #ef4444 !important;
+      -webkit-text-stroke: 2px #1d4ed8 !important;
+      paint-order: stroke fill !important;
+      text-shadow: none !important;
+      font-weight: 800 !important;
+    }
     html:not(.dark) #pwaInstallBanner {
       background: linear-gradient(90deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%) !important;
       border-bottom-color: #bfdbfe !important;
@@ -1322,7 +1329,7 @@
             </button>
             <button type="button" onclick="openQrScannerModal('asettInput')" class="px-4 bg-slate-800 hover:bg-slate-700 active:bg-amber-500 active:text-slate-950 border border-slate-700 rounded-xl text-slate-200 flex items-center justify-center gap-1.5 transition shadow-sm" title="اسکن بارکد و QR Code با دوربین">
               <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
-              <span class="text-xs font-bold hidden sm:inline text-amber-300">اسکن با دوربین</span>
+              <span id="scanCameraLabel" class="text-xs font-bold hidden sm:inline text-amber-300">اسکن با دوربین</span>
             </button>
           </div>
           <div id="asettFeedback" class="hidden"></div>
