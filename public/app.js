@@ -1051,7 +1051,7 @@ function renderAddedActivitiesList() {
     const rebuildableBadge = act.rebuildable
       ? `<span class="inline-flex max-w-full break-words whitespace-normal text-right items-center gap-1 px-2 py-0.5 rounded-lg bg-cyan-950/80 border border-cyan-500/50 text-[11px] font-bold text-cyan-300">
           <svg class="w-3 h-3 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-          <span class="break-words">قطعه Rebuildble: ${escapeHtml(rebuildableText)}</span>
+          <span class="break-words">قطعه Rebuildable: ${escapeHtml(rebuildableText)}</span>
         </span>`
       : '';
 
@@ -1756,7 +1756,7 @@ function openActivityTimeModal(actId, defaultTab = 'manual') {
 
   if (idInput) idInput.value = actId;
   if (titleEl) titleEl.textContent = `فعالیت: ${act.type}`;
-  if (subEl) subEl.textContent = `قطعه Rebuildble ID: ${act.rebuildable || 'تعیین نشده'} ${act.rebuildableDesc ? `(${act.rebuildableDesc})` : ''}`;
+  if (subEl) subEl.textContent = `قطعه Rebuildable ID: ${act.rebuildable || 'تعیین نشده'} ${act.rebuildableDesc ? `(${act.rebuildableDesc})` : ''}`;
 
   if (hrEl) hrEl.value = (act.durationHours && act.durationHours > 0) ? act.durationHours : '';
   if (minEl) minEl.value = (act.durationMinutes !== undefined && act.durationMinutes !== null && act.durationTotalSeconds > 0) ? act.durationMinutes : '';
@@ -2903,8 +2903,8 @@ async function syncRebuildablesForAsett(asettVal) {
       select.innerHTML = '<option value="">-- لطفاً ابتدا ASETT ID را وارد یا اسکن فرمایید --</option>';
       select.disabled = true;
       if (badge) {
-        badge.className = 'text-[10px] text-slate-400 font-bold bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700';
-        badge.textContent = 'منتظر ورود ASETT ID';
+        badge.className = 'text-[10px] text-slate-400 font-bold bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 leading-normal break-words whitespace-normal text-right self-start sm:self-auto max-w-full shadow-sm';
+        badge.textContent = 'منتظر ورود ASETT ID  شناسه محل فعالیت';
       }
       if (feedback) {
         feedback.innerHTML = '';
@@ -5617,7 +5617,7 @@ function showDetailModal(id) {
         : `<span class="text-slate-500 text-[11px] bg-slate-900 px-2 py-0.5 rounded border border-slate-800">بدون زمان تفکیکی</span>`;
 
       const rebText = act.rebuildable
-        ? `<span class="text-cyan-300 text-[11px] font-mono font-bold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800/60">Rebuildble ID: ${escapeHtml(act.rebuildable)}</span>`
+        ? `<span class="text-cyan-300 text-[11px] font-mono font-bold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800/60">Rebuildable ID: ${escapeHtml(act.rebuildable)}</span>`
         : '';
 
       return `
@@ -5696,7 +5696,7 @@ function showDetailModal(id) {
         </div>
         <div class="pt-2 border-t border-slate-800 space-y-1 text-xs">
           <div class="flex justify-between py-1 border-b border-slate-800/60"><span class="text-slate-400">کد تجهیز (ASETT ID):</span><span class="font-mono text-slate-200">${record.asett || '---'}</span></div>
-          <div class="flex justify-between py-1 border-b border-slate-800/60"><span class="text-slate-400">شناسه داغی (rebuidable ID):</span><span class="font-mono text-slate-200">${record.rebuildable || '---'}</span></div>
+          <div class="flex justify-between py-1 border-b border-slate-800/60"><span class="text-slate-400">شناسه داغی (Rebuildable ID):</span><span class="font-mono text-slate-200">${record.rebuildable || '---'}</span></div>
           <div class="flex justify-between py-1 border-b border-slate-800/60"><span class="text-slate-400">مدت زمان فعالیت:</span><span class="font-mono text-cyan-300 font-bold">${record.durationFormatted ? `${record.durationFormatted} (${record.durationDigital || ''})` : 'ثبت نشده'}</span></div>
           <div class="flex justify-between py-1 border-b border-slate-800/60"><span class="text-slate-400">موقعیت مکانی (GPS):</span>${mapLink}</div>
           <div class="flex justify-between py-1"><span class="text-slate-400">همکاران همراه:</span><span class="font-mono text-slate-200">${(record.colleagues || []).map(c => typeof c === 'object' && c !== null ? `${c.name} (${c.code})` : c).join('، ') || 'ندارد'}</span></div>
@@ -5745,7 +5745,7 @@ function exportToExcel() {
     'واحد',
     'سمت سازمانی',
     'ASETT ID',
-    'Rebuildble ID',
+    'Rebuildable ID',
     'نوع اقدام / فعالیت به همراه اطلاعات دیگر',
     'مدت زمان فعالیت با ذکر دستی یا اتوماتیک',
     'توضیحات تکمیلی',
@@ -5904,7 +5904,7 @@ function printReportsAsPDF() {
             <th style="width:75px;">واحد</th>
             <th style="width:75px;">سمت</th>
             <th style="width:65px;">ASETT ID</th>
-            <th style="width:65px;">Rebuildble</th>
+            <th style="width:65px;">Rebuildable</th>
             <th style="width:130px;">نوع اقدام و فعالیت</th>
             <th style="width:100px;">مدت زمان (دستی/اتوماتیک)</th>
             <th>توضیحات تکمیلی</th>
@@ -6117,7 +6117,7 @@ async function loadAdminUsersList() {
         <span class="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold">✓ تعریف و سطوح مدیران</span>
         <span class="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold">✓ پشتیبان‌گیری و بازنشانی</span>
         <span class="text-[10px] bg-teal-500/10 text-teal-300 border border-teal-500/30 px-2 py-0.5 rounded font-bold">✓ ماژول پرسنل (کامل)</span>
-        <span class="text-[10px] bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded font-bold">✓ ماژول asset &Rebuildble (کامل)</span>
+        <span class="text-[10px] bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded font-bold">✓ ماژول asset &Rebuildable (کامل)</span>
       </div>
     `;
     container.appendChild(superRow);
@@ -6144,7 +6144,7 @@ async function loadAdminUsersList() {
         <span class="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold">✓ تعریف و سطوح مدیران</span>
         <span class="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold">✓ پشتیبان‌گیری و بازنشانی</span>
         <span class="text-[10px] bg-teal-500/10 text-teal-300 border border-teal-500/30 px-2 py-0.5 rounded font-bold">✓ ماژول پرسنل (کامل)</span>
-        <span class="text-[10px] bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded font-bold">✓ ماژول asset &Rebuildble (کامل)</span>
+        <span class="text-[10px] bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded font-bold">✓ ماژول asset &Rebuildable (کامل)</span>
       </div>
     `;
     container.appendChild(managerRow);
@@ -6239,10 +6239,10 @@ async function loadAdminUsersList() {
               <span>پشتیبان‌گیری: <strong class="${hasBackupPerm ? 'text-amber-200 font-bold' : 'text-slate-400'}">${hasBackupPerm ? 'مجاز ✓' : 'مسدود ✕'}</strong></span>
             </button>
 
-            <!-- ۵. دسترسی به ماژول asset &Rebuildble -->
-            <button type="button" onclick="toggleAdminModulePermission('${escapeHtml(admin.username)}', 'assetRebuildable')" class="px-2.5 py-1 text-[11px] rounded-lg border font-medium transition inline-flex items-center gap-1.5 ${hasAssetPerm ? 'bg-cyan-950/80 hover:bg-cyan-900 border-cyan-600/80 text-cyan-300 shadow-sm' : 'bg-slate-950/60 hover:bg-slate-800 border-slate-800 text-slate-500 hover:text-slate-300'}" title="کلیک جهت ${hasAssetPerm ? 'سلب' : 'اعطای'} دسترسی به ماژول asset &Rebuildble">
+            <!-- ۵. دسترسی به ماژول asset &Rebuildable -->
+            <button type="button" onclick="toggleAdminModulePermission('${escapeHtml(admin.username)}', 'assetRebuildable')" class="px-2.5 py-1 text-[11px] rounded-lg border font-medium transition inline-flex items-center gap-1.5 ${hasAssetPerm ? 'bg-cyan-950/80 hover:bg-cyan-900 border-cyan-600/80 text-cyan-300 shadow-sm' : 'bg-slate-950/60 hover:bg-slate-800 border-slate-800 text-slate-500 hover:text-slate-300'}" title="کلیک جهت ${hasAssetPerm ? 'سلب' : 'اعطای'} دسترسی به ماژول asset &Rebuildable">
               <span class="w-2 h-2 rounded-full ${hasAssetPerm ? 'bg-cyan-400 shadow-[0_0_6px_#22d3ee]' : 'bg-slate-600'}"></span>
-              <span>asset &Rebuildble: <strong class="${hasAssetPerm ? 'text-cyan-200 font-bold' : 'text-slate-400'}">${hasAssetPerm ? 'مجاز ✓' : 'مسدود ✕'}</strong></span>
+              <span>asset &Rebuildable: <strong class="${hasAssetPerm ? 'text-cyan-200 font-bold' : 'text-slate-400'}">${hasAssetPerm ? 'مجاز ✓' : 'مسدود ✕'}</strong></span>
             </button>
           </div>
         </div>
@@ -6332,7 +6332,7 @@ function updateNewAdminScopeHint() {
   if (permOrg) selectedModules.push('تعریف سرپرستی‌ها و واحدها');
   if (permAdmin) selectedModules.push('تعریف و سطوح مدیران');
   if (permBackup) selectedModules.push('پشتیبان‌گیری و بازنشانی');
-  if (permAsset) selectedModules.push('ماژول asset &Rebuildble');
+  if (permAsset) selectedModules.push('ماژول asset &Rebuildable');
 
   let modulesPart = '';
   if (selectedModules.length > 0) {
@@ -6444,7 +6444,7 @@ async function toggleAdminModulePermission(username, moduleKey) {
       orgManage: 'ماژول سرپرستی و واحدها',
       adminManage: 'ماژول تعریف مدیران',
       backup: 'ماژول پشتیبان‌گیری',
-      assetRebuildable: 'ماژول asset &Rebuildble'
+      assetRebuildable: 'ماژول asset &Rebuildable'
     };
     const modLabel = labels[moduleKey] || moduleKey;
     showToast(`دسترسی به «${modLabel}» برای مدیر «${admin.fullName || username}» ${newStatus ? 'اعطا شد (فعال)' : 'سلب گردید (مسدود)'}`, 'success');
@@ -6626,7 +6626,7 @@ function updateEditAdminScopeHint() {
   if (permOrg) selectedModules.push('تعریف سرپرستی‌ها و واحدها');
   if (permAdmin) selectedModules.push('تعریف و سطوح مدیران');
   if (permBackup) selectedModules.push('پشتیبان‌گیری و بازنشانی');
-  if (permAsset) selectedModules.push('ماژول asset &Rebuildble');
+  if (permAsset) selectedModules.push('ماژول asset &Rebuildable');
 
   let modulesPart = '';
   if (selectedModules.length > 0) {
@@ -8116,7 +8116,7 @@ function showAdminTab(tabName) {
 }
 
 // ==========================================
-// ۲۲. ماژول بانک اطلاعات تجهیزات و قطعات بازسازی (asset &Rebuildble)
+// ۲۲. ماژول بانک اطلاعات تجهیزات و قطعات بازسازی (asset &Rebuildable)
 // ==========================================
 var DEFAULT_INITIAL_ASSETS = [];
 
@@ -8376,7 +8376,7 @@ function renderAssetRebuildableTable(list, scope) {
           </div>
         </td>
 
-        <!-- ۳. Rebuildble -->
+        <!-- ۳. Rebuildable -->
         <td class="py-3 px-4">
           <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-semibold text-xs">
             <svg class="w-3 h-3 shrink-0 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>
@@ -8429,7 +8429,7 @@ function renderAssetRebuildableTable(list, scope) {
 }
 
 // ==========================================
-// عملیات افزودن و ویرایش رکورد با پشتیبانی از چند Rebuildble برای هر ASETT
+// عملیات افزودن و ویرایش رکورد با پشتیبانی از چند Rebuildable برای هر ASETT
 // ==========================================
 function openAddAssetModal() {
   const form = document.getElementById('newAssetRebuildableForm');
@@ -8532,7 +8532,7 @@ function addNewRebuildableItemRow(initialName = '', initialDesc = '') {
     <div class="flex items-center justify-between">
       <span class="text-[11px] font-bold text-cyan-400 flex items-center gap-1.5">
         <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-        <span>Rebuildble شماره <strong class="row-num font-mono">${rowCount}</strong></span>
+        <span>Rebuildable شماره <strong class="row-num font-mono">${rowCount}</strong></span>
       </span>
       <button type="button" onclick="removeRebuildableItemRow(this)" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-0.5 rounded hover:bg-rose-950/40 transition">
         حذف سطر ✕
@@ -8540,7 +8540,7 @@ function addNewRebuildableItemRow(initialName = '', initialDesc = '') {
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
       <div>
-        <label class="block text-[11px] text-slate-300 mb-1 font-semibold">عنوان یا کد Rebuildble: <span class="text-red-400">*</span></label>
+        <label class="block text-[11px] text-slate-300 mb-1 font-semibold">عنوان یا کد Rebuildable: <span class="text-red-400">*</span></label>
         <input type="text" required value="${escapeHtml(initialName)}" placeholder="عنوان یا کد قطعه بازسازی..." class="rebuildable-name-input w-full bg-slate-900 border border-slate-700 focus:border-cyan-500 rounded-lg px-3 py-1.5 text-xs text-slate-100 outline-none">
       </div>
       <div>
@@ -8560,7 +8560,7 @@ function removeRebuildableItemRow(btn) {
   const row = btn.closest('.rebuildable-row');
   if (row) {
     if (container.children.length <= 1) {
-      showToast('حداقل یک قطعه Rebuildble باید تعریف گردد', 'warning');
+      showToast('حداقل یک قطعه Rebuildable باید تعریف گردد', 'warning');
       return;
     }
     row.remove();
@@ -8615,7 +8615,7 @@ async function handleNewAssetRebuildableSubmit(e) {
     const rDesc = descInput ? descInput.value.trim() : '';
 
     if (!rName) {
-      showToast(`عنوان Rebuildble در سطر ${i + 1} الزامی است`, 'warning');
+      showToast(`عنوان Rebuildable در سطر ${i + 1} الزامی است`, 'warning');
       if (nameInput) nameInput.focus();
       return;
     }
@@ -8631,7 +8631,7 @@ async function handleNewAssetRebuildableSubmit(e) {
   }
 
   if (recordsToSave.length === 0) {
-    showToast('حداقل یک قطعه Rebuildble باید مشخص شود', 'warning');
+    showToast('حداقل یک قطعه Rebuildable باید مشخص شود', 'warning');
     return;
   }
 
@@ -8794,7 +8794,7 @@ function exportAssetRebuildablesToExcel() {
   }
 
   const aoa = [
-    ['شماره ردیف', 'ASETT', 'Rebuildble', 'توضیحات', 'سرپرستی', 'واحد']
+    ['شماره ردیف', 'ASETT', 'Rebuildable', 'توضیحات', 'سرپرستی', 'واحد']
   ];
 
   list.forEach((r, idx) => {
@@ -8815,7 +8815,7 @@ function exportAssetRebuildablesToExcel() {
     ws['!cols'] = [
       { wch: 12 }, // شماره ردیف
       { wch: 32 }, // ASETT
-      { wch: 32 }, // Rebuildble
+      { wch: 32 }, // Rebuildable
       { wch: 50 }, // توضیحات
       { wch: 28 }, // سرپرستی
       { wch: 28 }  // واحد
@@ -8845,7 +8845,7 @@ function downloadAssetExcelTemplate() {
   const sampleUnit = (!scope.isGlobalUnit && scope.unit) ? scope.unit : 'واحد نگهداری و تعمیرات';
 
   const aoa = [
-    ['شماره ردیف', 'ASETT', 'Rebuildble', 'توضیحات', 'سرپرستی', 'واحد'],
+    ['شماره ردیف', 'ASETT', 'Rebuildable', 'توضیحات', 'سرپرستی', 'واحد'],
     [1, 'کمپرسور اطلس کوپکو GA-75', 'المنت فیلتر هوا', 'سرویس هر ۵۰۰۰ ساعت و تعویض با کیت اورجینال', sampleSup, sampleUnit],
     [2, 'کمپرسور اطلس کوپکو GA-75', 'شیر آنلودر', 'بررسی اورینگ‌ها و فنر داخلی', sampleSup, sampleUnit],
     [3, 'ترانسمیتر فشار Rosemount 3051', 'کپسول دیافراگمی هسلوی', 'کالیبراسیون ۵ نقطه‌ای و تست نشتی', sampleSup, sampleUnit]
@@ -9068,7 +9068,7 @@ window.saveDurationTime = saveDurationTime;
 window.updateDurationFormattedDisplay = updateDurationFormattedDisplay;
 window.clearDurationInputs = clearDurationInputs;
 
-// توابع ماژول asset &Rebuildble
+// توابع ماژول asset &Rebuildable
 window.renderAssetRebuildableUI = renderAssetRebuildableUI;
 window.openAddAssetModal = openAddAssetModal;
 window.onNewAssetSupervisionChange = onNewAssetSupervisionChange;

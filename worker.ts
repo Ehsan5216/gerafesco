@@ -801,7 +801,7 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
   if (path === '/api/assets' && method === 'POST') {
     const admin = await getAuthenticatedAdmin(request, db);
     if (!hasAdminModule(admin, 'assetRebuildable')) {
-      return json({ ok: false, error: 'عدم دسترسی به ماژول asset &Rebuildble' }, 403);
+      return json({ ok: false, error: 'عدم دسترسی به ماژول asset &Rebuildable' }, 403);
     }
     const body = (await request.json().catch(() => ({}))) as {
       items?: Array<Record<string, unknown>>;
