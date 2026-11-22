@@ -120,6 +120,8 @@
     window.applyStopwatchTimeToForm = window.applyStopwatchTimeToForm || function() {};
     window.handleRebuildableSelectChange = window.handleRebuildableSelectChange || function() {};
     window.clearRebuildableSelection = window.clearRebuildableSelection || function() {};
+    window.toggleRebuildableDropdown = window.toggleRebuildableDropdown || function() {};
+    window.selectRebuildableOption = window.selectRebuildableOption || function() {};
     window.openActivityTimeModal = window.openActivityTimeModal || function() {};
     window.closeActivityTimeModal = window.closeActivityTimeModal || function() {};
     window.setModalQuickTime = window.setModalQuickTime || function() {};
@@ -675,6 +677,42 @@
       paint-order: stroke fill !important;
       text-shadow: none !important;
       font-weight: 800 !important;
+    }
+    html:not(.dark) #rebuildableDropdownBtn {
+      background: #ffffff !important;
+      border: 2px solid #64748b !important;
+      color: #090d16 !important;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+    }
+    html:not(.dark) #rebuildableDropdownBtn:hover:not(:disabled) {
+      border-color: #0891b2 !important;
+    }
+    html:not(.dark) #rebuildableDropdownBtnLabel {
+      color: #090d16 !important;
+    }
+    html:not(.dark) #rebuildableDropdownBtnDesc {
+      color: #475569 !important;
+    }
+    html:not(.dark) #rebuildableDropdownList {
+      background: #ffffff !important;
+      border: 1.5px solid #0891b2 !important;
+      box-shadow: 0 12px 24px -4px rgba(15, 23, 42, 0.14) !important;
+    }
+    html:not(.dark) .rebuildable-option-item {
+      background: #ffffff !important;
+      border-bottom-color: #e2e8f0 !important;
+    }
+    html:not(.dark) .rebuildable-option-item:hover {
+      background: #f0f9ff !important;
+    }
+    html:not(.dark) .rebuildable-option-item[data-selected="true"] {
+      background: #ecfeff !important;
+    }
+    html:not(.dark) .rebuildable-opt-id {
+      color: #0e7490 !important;
+    }
+    html:not(.dark) .rebuildable-opt-desc {
+      color: #334155 !important;
     }
     html:not(.dark) #pwaInstallBanner {
       background: linear-gradient(90deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%) !important;
@@ -1345,10 +1383,10 @@
           </h2>
         </div>
 
-        <!-- ماژول Rebuildable ID شناسه تجهیز: فرم کشویی منحصراً از دیتابیس ASETT (حالت دستی حذف شده است) -->
-        <div class="p-3 sm:p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2.5 w-full max-w-full overflow-hidden">
+        <!-- ماژول Rebuildable ID شناسه تجهیز: فرم کشویی دوخطی منحصراً از دیتابیس ASETT (حالت دستی حذف شده است) -->
+        <div id="rebuildableModuleContainer" class="p-3 sm:p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2.5 w-full max-w-full overflow-hidden">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 w-full">
-            <label for="rebuildableSelect" class="text-xs font-bold text-cyan-300 flex items-center gap-2 shrink-0">
+            <label for="rebuildableDropdownBtn" class="text-xs font-bold text-cyan-300 flex items-center gap-2 shrink-0">
               <span class="w-2 h-2 rounded-full bg-cyan-400 shrink-0"></span>
               <span>Rebuildable ID شناسه تجهیز:</span>
             </label>
@@ -1359,14 +1397,26 @@
 
           <div class="flex items-center gap-2 w-full max-w-full min-w-0">
             <div class="relative flex-1 min-w-0 max-w-full">
-              <select id="rebuildableSelect" onchange="handleRebuildableSelectChange(this)" disabled class="w-full min-w-0 max-w-full truncate text-ellipsis overflow-hidden bg-slate-900 border border-slate-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-100 transition outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed" style="text-overflow: ellipsis; max-width: 100%;">
+              <select id="rebuildableSelect" onchange="handleRebuildableSelectChange(this)" disabled class="hidden" aria-hidden="true" tabindex="-1">
                 <option value="">-- فقط انتخاب از لیست قطعات دیتابیس (ثبت دستی حذف گردید) --</option>
               </select>
+              <button type="button" id="rebuildableDropdownBtn" onclick="toggleRebuildableDropdown()" disabled class="w-full min-w-0 max-w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/70 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 rounded-xl px-3 py-2 text-right transition outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-between gap-2">
+                <div class="min-w-0 flex-1 text-right">
+                  <div id="rebuildableDropdownBtnLabel" class="text-xs sm:text-sm font-bold text-slate-100 truncate">-- فقط انتخاب از لیست قطعات دیتابیس (ثبت دستی حذف گردید) --</div>
+                  <div id="rebuildableDropdownBtnDesc" class="hidden text-[11px] text-slate-400 truncate mt-0.5"></div>
+                </div>
+                <svg id="rebuildableDropdownChevron" class="w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
             </div>
             <button type="button" id="clearRebuildableSelectBtn" onclick="clearRebuildableSelection()" class="hidden shrink-0 px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-semibold transition active:scale-95" title="پاکسازی انتخاب قطعه">
               پاکسازی
             </button>
           </div>
+
+          <!-- نوار بازشونده دوخطی Rebuildable ID ها: سطر اول شناسه قطعه، سطر دوم توضیحات -->
+          <div id="rebuildableDropdownList" class="hidden w-full max-h-72 overflow-y-auto rounded-xl bg-slate-900 border border-cyan-500/50 shadow-xl divide-y divide-slate-800/80"></div>
 
           <!-- جعبه جزئیات فنی و مشخصات قطعه انتخاب شده با نمایش چندخطی کامل در موبایل -->
           <div id="rebuildableDetailBox" class="hidden p-3 rounded-xl bg-gradient-to-br from-cyan-950/70 via-slate-900 to-slate-950 border border-cyan-500/50 shadow-md text-xs text-cyan-200 space-y-2 max-w-full overflow-hidden">

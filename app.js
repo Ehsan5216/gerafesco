@@ -799,10 +799,12 @@ function addSelectedActivity() {
   if (!rebuildableVal) {
     showToast('⚠️ لطفاً ابتدا قطعه قابل بازسازی (Rebuildable ID) را از لیست کشویی دیتابیس انتخاب فرمایید.', 'error');
     const sel = document.getElementById('rebuildableSelect');
-    if (sel && !sel.disabled) {
-      sel.focus();
-      sel.classList.add('ring-2', 'ring-rose-500', 'border-rose-500');
-      setTimeout(() => sel.classList.remove('ring-2', 'ring-rose-500', 'border-rose-500'), 2500);
+    const ddBtn = document.getElementById('rebuildableDropdownBtn');
+    if (sel && !sel.disabled && ddBtn && !ddBtn.disabled) {
+      ddBtn.focus();
+      ddBtn.classList.add('ring-2', 'ring-rose-500', 'border-rose-500');
+      setTimeout(() => ddBtn.classList.remove('ring-2', 'ring-rose-500', 'border-rose-500'), 2500);
+      toggleRebuildableDropdown(true);
     } else {
       const asettInp = document.getElementById('asettInput');
       if (asettInp) {
@@ -1044,7 +1046,7 @@ function renderAddedActivitiesList() {
     }
 
     const itemEl = document.createElement('div');
-    itemEl.className = 'p-3 rounded-2xl bg-slate-950/90 border border-slate-700/80 shadow-md space-y-2.5 transition hover:border-slate-600';
+    itemEl.className = 'p-3 rounded-2xl bg-slate-950/90 border border-slate-700/80 shadow-md transition hover:border-slate-600';
     const rebuildableText = act.rebuildableDesc
       ? `${act.rebuildable} - ${act.rebuildableDesc}`
       : act.rebuildable;
@@ -1056,15 +1058,9 @@ function renderAddedActivitiesList() {
       : '';
 
     const hasTime = (act.durationTotalSeconds && act.durationTotalSeconds > 0);
-    const timeDisplayHtml = hasTime
-      ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 shadow-sm">
-          <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <span>${escapeHtml(act.durationFormatted || act.durationDigital)}</span>
-          <span class="text-[10px] text-emerald-400/80 font-sans font-normal border-r border-emerald-500/40 pr-1.5 mr-0.5">(${escapeHtml(act.durationMethod || 'دستی')})</span>
-        </span>`
-      : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800">
-          <span>زمان ثبت نشده</span>
-        </span>`;
+    const timeBadgeHtml = hasTime
+      ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-mono font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/60 shadow-xs">⏱️ زمان: ${escapeHtml(act.durationFormatted || act.durationDigital)} <span class="text-[10px] text-emerald-400 font-sans font-normal">(${escapeHtml(act.durationMethod || 'دستی')})</span></span>`
+      : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800">زمان ثبت نشده</span>`;
 
     itemEl.innerHTML = `
       <div class="flex items-start justify-between gap-2">
@@ -1076,68 +1072,12 @@ function renderAddedActivitiesList() {
             <span class="text-xs sm:text-sm font-bold text-slate-100">${escapeHtml(act.type)}</span>
             ${rebuildableBadge}
             ${detailPills}
-            ${hasTime ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-mono font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/60 shadow-xs">⏱️ زمان: ${escapeHtml(act.durationFormatted || act.durationDigital)} <span class="text-[10px] text-emerald-400 font-sans font-normal">(${escapeHtml(act.durationMethod)})</span></span>` : ''}
+            ${timeBadgeHtml}
           </div>
         </div>
         <button type="button" onclick="removeAddedActivity('${act.id}')" class="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-950/40 rounded-lg transition shrink-0 cursor-pointer" title="حذف این فعالیت">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
         </button>
-      </div>
-
-      <!-- سطر ثبت و تنظیم زمان اختصاصی این فعالیت (دستی و جداگانه) -->
-      <div class="pt-2 border-t border-slate-800/80 bg-slate-900/60 -mx-3 -mb-3 p-3 rounded-b-2xl space-y-2.5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-[11px] font-bold text-slate-300 flex items-center gap-1">
-              <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <span>مدت این فعالیت:</span>
-            </span>
-            <div id="actCardBadge_${act.id}">${timeDisplayHtml}</div>
-          </div>
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <button type="button" onclick="startStopwatchForActivity('${act.id}')" class="px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 active:scale-95 text-white rounded-lg text-[11px] font-black transition cursor-pointer flex items-center gap-1.5 shadow-sm" title="کرنومتر اختصاصی زنده این فعالیت">
-              <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <span>⏱️ کرنومتر این فعالیت</span>
-            </button>
-            <button type="button" onclick="openActivityTimeModal('${act.id}', 'manual')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1" title="تنظیم پیشرفته زمان فعالیت">
-              <span>تنظیم زمان ⚙️</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- فیلدهای ورودی مستقیم دستی (ساعت و دقیقه) برای هر فعالیت به صورت مستقل و جداگانه -->
-        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-slate-950/80 p-2 rounded-xl border border-slate-800">
-          <div class="flex items-center gap-1.5 flex-1 min-w-[170px]" dir="ltr">
-            <!-- ساعت -->
-            <div class="relative flex-1">
-              <input type="number" id="actCardHr_${act.id}" value="${act.durationHours > 0 ? act.durationHours : ''}" min="0" max="999" placeholder="0" onchange="updateActivityTimeDirect('${act.id}', false)" class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500 focus:border-cyan-500 rounded-lg px-2 py-1.5 text-xs font-mono text-center text-cyan-300 outline-none">
-              <span class="absolute left-1.5 top-1.5 text-[8px] text-slate-500 font-bold pointer-events-none">HR</span>
-            </div>
-            <span class="text-slate-500 font-bold text-xs select-none">:</span>
-            <!-- دقیقه -->
-            <div class="relative flex-1">
-              <input type="number" id="actCardMin_${act.id}" value="${(act.durationMinutes !== undefined && act.durationMinutes !== null && act.durationTotalSeconds > 0) ? act.durationMinutes : ''}" min="0" max="59" placeholder="0" onchange="updateActivityTimeDirect('${act.id}', false)" class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500 focus:border-cyan-500 rounded-lg px-2 py-1.5 text-xs font-mono text-center text-cyan-300 outline-none">
-              <span class="absolute left-1.5 top-1.5 text-[8px] text-slate-500 font-bold pointer-events-none">MIN</span>
-            </div>
-            <span class="text-[10px] text-slate-400 font-sans" dir="rtl">ساعت و دقیقه</span>
-          </div>
-
-          <!-- دکمه‌های سریع زمان و دکمه ثبت دستی -->
-          <div class="flex items-center gap-1 flex-wrap shrink-0">
-            <button type="button" onclick="setActivityQuickTimeDirect('${act.id}', 0, 15)" class="px-1.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-md text-[10px] font-mono cursor-pointer transition">۱۵د</button>
-            <button type="button" onclick="setActivityQuickTimeDirect('${act.id}', 0, 30)" class="px-1.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-md text-[10px] font-mono cursor-pointer transition">۳۰د</button>
-            <button type="button" onclick="setActivityQuickTimeDirect('${act.id}', 1, 0)" class="px-1.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-md text-[10px] font-mono cursor-pointer transition">۱س</button>
-            <button type="button" onclick="updateActivityTimeDirect('${act.id}', true)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold rounded-lg text-xs flex items-center gap-1 shadow transition cursor-pointer" title="ثبت دستی زمان برای این فعالیت">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-              <span>ثبت دستی</span>
-            </button>
-            ${hasTime ? `
-            <button type="button" onclick="clearActivityTimeDirect('${act.id}')" class="p-1 bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-300 border border-slate-700 rounded-lg text-xs transition cursor-pointer" title="پاکسازی زمان این فعالیت">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7"/></svg>
-            </button>
-            ` : ''}
-          </div>
-        </div>
       </div>
     `;
     container.appendChild(itemEl);
@@ -2902,6 +2842,8 @@ async function syncRebuildablesForAsett(asettVal) {
     if (!asett) {
       select.innerHTML = '<option value="">-- لطفاً ابتدا ASETT ID را وارد یا اسکن فرمایید --</option>';
       select.disabled = true;
+      renderRebuildableDropdownList();
+      closeRebuildableDropdown();
       if (badge) {
         badge.className = 'text-[10px] text-slate-400 font-bold bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 leading-normal break-words whitespace-normal text-right self-start sm:self-auto max-w-full shadow-sm';
         badge.textContent = 'منتظر ورود ASETT ID  شناسه محل فعالیت';
@@ -2985,6 +2927,8 @@ async function syncRebuildablesForAsett(asettVal) {
       select.innerHTML = optionsHtml;
 
       select.selectedIndex = 0;
+      renderRebuildableDropdownList();
+      closeRebuildableDropdown();
       handleRebuildableSelectChange(select);
 
       const matchedAssetName = matchedRecords[0].asset || asett;
@@ -3001,6 +2945,8 @@ async function syncRebuildablesForAsett(asettVal) {
       let optionsHtml = '<option value="">-- هیچ قطعه‌ای در دیتابیس برای این تجهیز یافت نشد (ثبت دستی غیرفعال است) --</option>';
       select.innerHTML = optionsHtml;
       select.selectedIndex = 0;
+      renderRebuildableDropdownList();
+      closeRebuildableDropdown();
       handleRebuildableSelectChange(select);
 
       if (badge) {
@@ -3017,10 +2963,171 @@ async function syncRebuildablesForAsett(asettVal) {
   }
 }
 
+function updateRebuildableDropdownTrigger() {
+  const select = document.getElementById('rebuildableSelect');
+  const btn = document.getElementById('rebuildableDropdownBtn');
+  const labelEl = document.getElementById('rebuildableDropdownBtnLabel');
+  const descEl = document.getElementById('rebuildableDropdownBtnDesc');
+  const listEl = document.getElementById('rebuildableDropdownList');
+  if (!select || !btn || !labelEl) return;
+
+  const realOptions = Array.from(select.options).filter(o => (o.value || '').trim() !== '');
+  const isDisabled = !!select.disabled || realOptions.length === 0;
+  btn.disabled = isDisabled;
+
+  const selectedVal = (select.value || '').trim();
+  const selectedOpt = select.selectedIndex >= 0 ? select.options[select.selectedIndex] : null;
+
+  if (selectedVal && selectedOpt) {
+    const desc = (selectedOpt.getAttribute('data-desc') || '').trim();
+    labelEl.textContent = selectedVal;
+    if (descEl) {
+      if (desc) {
+        descEl.textContent = desc;
+        descEl.classList.remove('hidden');
+      } else {
+        descEl.textContent = '';
+        descEl.classList.add('hidden');
+      }
+    }
+  } else {
+    const placeholderText = (select.options[0] && select.options[0].textContent)
+      ? select.options[0].textContent
+      : '-- انتخاب Rebuildable ID --';
+    labelEl.textContent = placeholderText;
+    if (descEl) {
+      descEl.textContent = '';
+      descEl.classList.add('hidden');
+    }
+  }
+
+  if (listEl) {
+    listEl.querySelectorAll('.rebuildable-option-item').forEach(item => {
+      const isSelected = (item.getAttribute('data-val') || '') === selectedVal && selectedVal !== '';
+      item.setAttribute('data-selected', isSelected ? 'true' : 'false');
+      if (isSelected) {
+        item.classList.add('bg-cyan-950/60', 'border-r-2', 'border-r-cyan-400');
+      } else {
+        item.classList.remove('bg-cyan-950/60', 'border-r-2', 'border-r-cyan-400');
+      }
+      const checkBadge = item.querySelector('.rebuildable-opt-check');
+      if (checkBadge) {
+        if (isSelected) checkBadge.classList.remove('hidden');
+        else checkBadge.classList.add('hidden');
+      }
+    });
+  }
+}
+
+function renderRebuildableDropdownList() {
+  const select = document.getElementById('rebuildableSelect');
+  const listEl = document.getElementById('rebuildableDropdownList');
+  if (!select || !listEl) return;
+
+  const realOptions = Array.from(select.options).filter(o => (o.value || '').trim() !== '');
+  if (realOptions.length === 0) {
+    listEl.innerHTML = '';
+    listEl.classList.add('hidden');
+    updateRebuildableDropdownTrigger();
+    return;
+  }
+
+  const currentVal = (select.value || '').trim();
+  let html = '';
+  realOptions.forEach(opt => {
+    const val = (opt.value || '').trim();
+    const desc = (opt.getAttribute('data-desc') || '').trim();
+    const isSelected = val === currentVal;
+    html += `
+      <button type="button"
+        data-val="${escapeHtml(val)}"
+        data-selected="${isSelected ? 'true' : 'false'}"
+        class="rebuildable-option-item w-full text-right px-3.5 py-2.5 hover:bg-slate-800/80 transition flex flex-col gap-1 cursor-pointer ${isSelected ? 'bg-cyan-950/60 border-r-2 border-r-cyan-400' : ''}">
+        <div class="flex items-center justify-between gap-2 w-full">
+          <span class="rebuildable-opt-id font-mono font-extrabold text-xs sm:text-sm text-cyan-300 break-all">${escapeHtml(val)}</span>
+          <span class="rebuildable-opt-check text-[10px] font-bold text-emerald-400 shrink-0 ${isSelected ? '' : 'hidden'}">✓ انتخاب‌شده</span>
+        </div>
+        <div class="rebuildable-opt-desc text-[11px] sm:text-xs text-slate-300 leading-relaxed break-words whitespace-normal w-full">${desc ? escapeHtml(desc) : '<span class="opacity-60">بدون توضیحات</span>'}</div>
+      </button>
+    `;
+  });
+
+  listEl.innerHTML = html;
+  if (!listEl.dataset.boundClick) {
+    listEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.rebuildable-option-item');
+      if (!btn) return;
+      const val = btn.getAttribute('data-val') || '';
+      selectRebuildableOption(val);
+    });
+    listEl.dataset.boundClick = '1';
+  }
+  updateRebuildableDropdownTrigger();
+}
+
+function closeRebuildableDropdown() {
+  const listEl = document.getElementById('rebuildableDropdownList');
+  const chevron = document.getElementById('rebuildableDropdownChevron');
+  if (listEl) listEl.classList.add('hidden');
+  if (chevron) chevron.classList.remove('rotate-180');
+}
+
+function toggleRebuildableDropdown(forceOpen) {
+  const select = document.getElementById('rebuildableSelect');
+  const btn = document.getElementById('rebuildableDropdownBtn');
+  const listEl = document.getElementById('rebuildableDropdownList');
+  const chevron = document.getElementById('rebuildableDropdownChevron');
+  if (!select || !btn || !listEl) return;
+
+  const realOptions = Array.from(select.options).filter(o => (o.value || '').trim() !== '');
+  if (select.disabled || btn.disabled || realOptions.length === 0) {
+    closeRebuildableDropdown();
+    return;
+  }
+
+  const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : listEl.classList.contains('hidden');
+  if (shouldOpen) {
+    if (!listEl.innerHTML.trim()) renderRebuildableDropdownList();
+    listEl.classList.remove('hidden');
+    if (chevron) chevron.classList.add('rotate-180');
+    const selectedItem = listEl.querySelector('.rebuildable-option-item[data-selected="true"]');
+    if (selectedItem) {
+      selectedItem.scrollIntoView({ block: 'nearest' });
+    }
+  } else {
+    closeRebuildableDropdown();
+  }
+}
+
+function selectRebuildableOption(val) {
+  const select = document.getElementById('rebuildableSelect');
+  if (!select) return;
+  select.value = val;
+  handleRebuildableSelectChange(select);
+  closeRebuildableDropdown();
+}
+
+if (!window._rebuildableDropdownDocBound) {
+  document.addEventListener('click', (e) => {
+    const container = document.getElementById('rebuildableModuleContainer');
+    if (container && !container.contains(e.target)) {
+      closeRebuildableDropdown();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeRebuildableDropdown();
+    }
+  });
+  window._rebuildableDropdownDocBound = true;
+}
+
 function handleRebuildableSelectChange(selectEl) {
   const val = selectEl ? selectEl.value : '';
   const detailBox = document.getElementById('rebuildableDetailBox');
   const clearBtn = document.getElementById('clearRebuildableSelectBtn');
+
+  updateRebuildableDropdownTrigger();
 
   if (clearBtn) {
     if (val) clearBtn.classList.remove('hidden');
@@ -3071,6 +3178,7 @@ function clearRebuildableSelection() {
   if (select) {
     select.value = '';
     handleRebuildableSelectChange(select);
+    closeRebuildableDropdown();
   }
 }
 
@@ -3086,6 +3194,8 @@ function resetRebuildableSelect() {
     select.innerHTML = '<option value="">-- فقط انتخاب از لیست قطعات دیتابیس (ثبت دستی حذف گردید) --</option>';
     select.disabled = true;
   }
+  renderRebuildableDropdownList();
+  closeRebuildableDropdown();
   const badge = document.getElementById('rebuildableStatusBadge');
   if (badge) {
     badge.className = 'text-[10px] text-slate-400 font-bold bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 leading-normal break-words whitespace-normal text-right self-start sm:self-auto max-w-full shadow-sm';
@@ -3123,8 +3233,10 @@ async function handleGraphFormSubmit(e) {
   if (!rebuildable) {
     showToast('⚠️ ثبت گزارش بدون قطعه قابل بازسازی (Rebuildable ID) امکان‌پذیر نیست. لطفاً قطعه را از لیست کشویی انتخاب فرمایید.', 'error');
     const select = document.getElementById('rebuildableSelect');
-    if (select && !select.disabled) {
-      select.focus();
+    const ddBtn = document.getElementById('rebuildableDropdownBtn');
+    if (select && !select.disabled && ddBtn && !ddBtn.disabled) {
+      ddBtn.focus();
+      toggleRebuildableDropdown(true);
     } else {
       document.getElementById('asettInput')?.focus();
     }
@@ -9088,6 +9200,8 @@ window.onAssetFilterSupervisionChange = onAssetFilterSupervisionChange;
 window.onAssetFilterUnitChange = onAssetFilterUnitChange;
 window.handleRebuildableSelectChange = handleRebuildableSelectChange;
 window.clearRebuildableSelection = clearRebuildableSelection;
+window.toggleRebuildableDropdown = toggleRebuildableDropdown;
+window.selectRebuildableOption = selectRebuildableOption;
 window.syncRebuildablesForAsett = syncRebuildablesForAsett;
 window.populateAsettDatalist = populateAsettDatalist;
 window.DEFAULT_ASSET_REBUILDABLES = DEFAULT_ASSET_REBUILDABLES;
