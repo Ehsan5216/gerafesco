@@ -1106,53 +1106,53 @@
   <!-- =========================================================================
        نوار هدر اصلی و وضعیت شبکه / دکمه مدیران
        ========================================================================= -->
-  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-xl px-4 py-3">
-    <div class="max-w-4xl mx-auto flex items-center justify-between gap-2">
+  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-xl px-2.5 sm:px-4 py-2.5 sm:py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between gap-1.5 sm:gap-2">
       
       <!-- عنوان و لوگوی سیستم (کلیک روی آرم برای ورود مدیران سیستم) -->
-      <div class="flex items-center gap-3">
-        <button type="button" id="headerLogoBtn" onclick="openAdminAccess()" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-950 p-1 shadow-xl shadow-black/80 flex items-center justify-center shrink-0 border border-slate-700/80 overflow-hidden ring-1 ring-amber-400/20 hover:ring-amber-400/70 hover:scale-105 active:scale-95 transition cursor-pointer group" title="ورود مدیران سیستم (کلیک روی آرم)">
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+        <button type="button" id="headerLogoBtn" onclick="openAdminAccess()" class="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-slate-950 p-1 shadow-xl shadow-black/80 flex items-center justify-center shrink-0 border border-slate-700/80 overflow-hidden ring-1 ring-amber-400/20 hover:ring-amber-400/70 hover:scale-105 active:scale-95 transition cursor-pointer group" title="ورود مدیران سیستم (کلیک روی آرم)">
           <img src="/app-logo.png?v=6" onerror="if(!this.dataset.tried){this.dataset.tried=1;this.src='/app-logo.png';}" class="w-full h-full object-contain filter drop-shadow-md group-hover:brightness-110 transition" alt="لوگوی سیستم - ورود مدیران">
         </button>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-1.5" style="text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 10px rgba(245, 158, 11, 0.3);">
-              <span>سامانه ثبت فعالیت ها</span>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-1.5 sm:gap-2 flex-nowrap">
+            <h1 class="text-[clamp(11.5px,3.6vw,15px)] sm:text-lg font-black text-white tracking-tight flex items-center gap-1.5 whitespace-nowrap shrink-0" style="text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 10px rgba(245, 158, 11, 0.3);">
+              <span class="whitespace-nowrap">سامانه ثبت فعالیت ها</span>
             </h1>
-            <button type="button" onclick="checkAppUpdate(true)" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition cursor-pointer shadow-sm" title="نسخه پروژه - کلیک برای بررسی بروزرسانی آنلاین">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <button type="button" onclick="checkAppUpdate(true)" class="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition cursor-pointer shadow-sm whitespace-nowrap shrink-0" title="نسخه پروژه - کلیک برای بررسی بروزرسانی آنلاین">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
               <span id="appHeaderVersionBadge">v3.3.1</span>
             </button>
           </div>
-          <button type="button" onclick="openAboutSystemPage()" class="text-[11px] sm:text-xs text-amber-300 hover:text-amber-200 font-semibold tracking-normal mt-0.5 transition inline-flex items-center gap-1 cursor-pointer group text-right active:scale-95" style="text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);" title="درباره سامانه و شناسنامه نرم‌افزار (کلیک کنید)">
-            <span class="border-b border-dashed border-amber-400/50 group-hover:border-amber-300 transition">تهیه شده در مدیریت اتوماسیون و ارتباطات</span>
-            <svg class="w-3 h-3 text-amber-400 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <button type="button" onclick="openAboutSystemPage()" class="text-[clamp(8.5px,2.65vw,11px)] sm:text-xs text-amber-300 hover:text-amber-200 font-semibold tracking-normal mt-0.5 transition inline-flex items-center gap-1 cursor-pointer group text-right active:scale-95 whitespace-nowrap max-w-full" style="text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);" title="درباره سامانه و شناسنامه نرم‌افزار (کلیک کنید)">
+            <span class="border-b border-dashed border-amber-400/50 group-hover:border-amber-300 transition whitespace-nowrap">تهیه شده در مدیریت اتوماسیون و ارتباطات</span>
+            <svg class="w-3 h-3 text-amber-400 group-hover:translate-x-0.5 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </button>
         </div>
       </div>
 
       <!-- کنترل‌های هدر: وضعیت شبکه و صف آفلاین -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1 sm:gap-2 shrink-0">
         <!-- دکمه وضعیت اتصال به دیتابیس کلادفلر D1 -->
-        <button id="headerCloudAuthBtn" type="button" onclick="handleCloudAuthAction()" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40 shadow-sm transition active:scale-95" title="وضعیت اتصال به پایگاه داده مرکزی کلادفلر (D1)">
+        <button id="headerCloudAuthBtn" type="button" onclick="handleCloudAuthAction()" class="inline-flex items-center justify-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40 shadow-sm transition active:scale-95" title="وضعیت اتصال به پایگاه داده مرکزی کلادفلر (D1)">
           <span id="headerCloudAuthDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
           <span id="headerCloudAuthText" class="hidden sm:inline">دیتابیس کلادفلر</span>
         </button>
 
         <!-- وضعیت آنلاین/آفلاین (عبارت آنلاین طبق درخواست حذف شد و نشانگر تنها در حالت قطعی نمایش داده می‌شود) -->
-        <div id="networkStatusBadge" class="hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 border border-slate-700 text-slate-300 shadow-sm" title="وضعیت ارتباط با شبکه">
+        <div id="networkStatusBadge" class="hidden inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-slate-800 border border-slate-700 text-slate-300 shadow-sm whitespace-nowrap" title="وضعیت ارتباط با شبکه">
           <span id="networkStatusDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
           <span id="networkStatusText" class="hidden"></span>
         </div>
 
         <!-- صف در انتظار ارسال -->
-        <button id="pendingQueueBadge" type="button" onclick="syncPendingRecords()" class="hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-950/80 border border-amber-500/50 text-amber-300 hover:bg-amber-900/80 transition shadow" title="کلیک برای همگام‌سازی فوری">
-          <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        <button id="pendingQueueBadge" type="button" onclick="syncPendingRecords()" class="hidden inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-amber-950/80 border border-amber-500/50 text-amber-300 hover:bg-amber-900/80 transition shadow whitespace-nowrap" title="کلیک برای همگام‌سازی فوری">
+          <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-400 animate-ping"></span>
           <span>صف: <span id="pendingQueueCount" class="font-mono">0</span></span>
         </button>
 
         <!-- دکمه تغییر پوسته (Dark / Light Mode) -->
-        <button id="themeToggleBtn" type="button" onclick="toggleTheme()" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 shadow-sm transition active:scale-95" title="تغییر حالت شب و روز (Dark / Light)">
+        <button id="themeToggleBtn" type="button" onclick="toggleTheme()" class="inline-flex items-center justify-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 shadow-sm transition active:scale-95" title="تغییر حالت شب و روز (Dark / Light)">
           <!-- آیکون خورشید برای حالت شب (کلیک برای رفتن به روز) -->
           <svg id="themeSunIcon" class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -1165,9 +1165,9 @@
         </button>
 
         <!-- دکمه نصب PWA روی دستگاه -->
-        <button id="pwaInstallBtn" type="button" onclick="handlePWAInstallClick()" class="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold border border-blue-400/40 shadow-md shadow-blue-600/20 active:scale-95 transition" title="نصب اپلیکیشن روی گوشی یا کامپیوتر">
-          <svg class="w-3.5 h-3.5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-          <span class="hidden xs:inline">نصب PWA</span>
+        <button id="pwaInstallBtn" type="button" onclick="handlePWAInstallClick()" class="inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-xs font-bold border border-blue-400/40 shadow-md shadow-blue-600/20 active:scale-95 transition" title="نصب اپلیکیشن روی گوشی یا کامپیوتر">
+          <svg class="w-4 h-4 sm:w-3.5 sm:h-3.5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span class="hidden sm:inline">نصب PWA</span>
         </button>
 
         <!-- نشانگر وضعیت نصب شده (طبق درخواست کاربر عبارت نصب شده حذف گردید) -->
