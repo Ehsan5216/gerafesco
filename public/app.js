@@ -627,6 +627,12 @@ function toggleOperatorAccordion(forceState) {
     if (icon) icon.style.transform = 'rotate(180deg)';
     if (btnText) btnText.textContent = 'بستن مشخصات';
   } else {
+    if (_operatorAutoSaveTimer) {
+      clearInterval(_operatorAutoSaveTimer);
+      _operatorAutoSaveTimer = null;
+    }
+    const noticeBox = document.getElementById('operatorAutoSaveNotice');
+    if (noticeBox) noticeBox.classList.add('hidden');
     acc.classList.add('hidden');
     if (icon) icon.style.transform = 'rotate(0deg)';
     if (btnText) btnText.textContent = 'مشاهده مشخصات';
@@ -807,10 +813,11 @@ function applyMatchedPersonnelToHome(match) {
   if (container) container.classList.remove('hidden');
 
   const noticeBox = document.getElementById('operatorAutoSaveNotice');
+  const countdownText = document.getElementById('operatorAutoSaveCountdownText');
+  const countdownNumber = document.getElementById('operatorCountdownNumber');
   const commitNowBtn = document.getElementById('commitNowBtn');
   const statusBadge = document.getElementById('operatorStatusBadge');
 
-  if (noticeBox) noticeBox.classList.add('hidden');
   if (commitNowBtn) commitNowBtn.classList.add('hidden');
   if (statusBadge) {
     statusBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
@@ -822,7 +829,25 @@ function applyMatchedPersonnelToHome(match) {
     _operatorAutoSaveTimer = null;
   }
 
-  showToast(`✓ مشخصات مجری (${_pendingOperatorData.name}) ثبت و به‌صورت دائمی در برنامه ذخیره شد.`, 'success');
+  let timeLeft = 7;
+  if (noticeBox) noticeBox.classList.remove('hidden');
+  if (countdownNumber) countdownNumber.textContent = `${timeLeft}s`;
+  if (countdownText) countdownText.textContent = `مشخصات مجری تأیید و ذخیره دائمی شد. بستن خودکار بخش مشخصات تا ${timeLeft} ثانیه دیگر...`;
+
+  _operatorAutoSaveTimer = setInterval(() => {
+    timeLeft--;
+    if (timeLeft <= 0) {
+      clearInterval(_operatorAutoSaveTimer);
+      _operatorAutoSaveTimer = null;
+      if (noticeBox) noticeBox.classList.add('hidden');
+      toggleOperatorAccordion(false);
+    } else {
+      if (countdownNumber) countdownNumber.textContent = `${timeLeft}s`;
+      if (countdownText) countdownText.textContent = `مشخصات مجری تأیید و ذخیره دائمی شد. بستن خودکار بخش مشخصات تا ${timeLeft} ثانیه دیگر...`;
+    }
+  }, 1000);
+
+  showToast(`✓ مشخصات مجری (${_pendingOperatorData.name}) تأیید و به‌صورت دائمی در برنامه ذخیره شد.`, 'success');
 }
 window.applyMatchedPersonnelToHome = applyMatchedPersonnelToHome;
 
@@ -5524,10 +5549,11 @@ function getReportRowData(r, idx) {
       if (c.deviceTag) parts.push(`تگ: ${c.deviceTag}`);
       if (c.referenceTool) parts.push(`مرجع: ${c.referenceTool}`);
       const actDur = act.durationFormatted || act.durationDigital || (act.durationTotalSeconds ? `${Math.floor(act.durationTotalSeconds/3600)}:${String(Math.floor((act.durationTotalSeconds%3600)/60)).padStart(2,'0')}` : '');
-      if (actDur) {
-        parts.push(`زمان: ${actDur} (${act.durationMethod || 'دستی'})`);
-      }
-      return (r.activities.length > 1 ? `(${i + 1}) ` : '') + parts.join(' - ');
+      const mainText = parts.join(' - ');
+      const itemText = actDur
+        ? `${mainText} به زمان: ${actDur} (${act.durationMethod || 'دستی'})`
+        : mainText;
+      return (r.activities.length > 1 ? `(${i + 1}) ` : '') + itemText;
     }).join(' | ');
   } else {
     const parts = [r.activityType || '---'];
@@ -5536,10 +5562,10 @@ function getReportRowData(r, idx) {
     if (cond.deviceTag) parts.push(`تگ: ${cond.deviceTag}`);
     if (cond.referenceTool) parts.push(`مرجع: ${cond.referenceTool}`);
     const rDur = r.durationFormatted || r.durationDigital || (r.durationTotalSeconds ? `${Math.floor(r.durationTotalSeconds/3600)}:${String(Math.floor((r.durationTotalSeconds%3600)/60)).padStart(2,'0')}` : '');
-    if (rDur) {
-      parts.push(`زمان: ${rDur} (${r.durationMethod || 'دستی'})`);
-    }
-    activityFull = parts.join(' - ');
+    const mainText = parts.join(' - ');
+    activityFull = rDur
+      ? `${mainText} به زمان: ${rDur} (${r.durationMethod || 'دستی'})`
+      : mainText;
   }
 
   let durationMethod = r.durationMethod;
@@ -5777,7 +5803,7 @@ function renderReportsTable(list) {
         <span class="font-mono font-bold text-cyan-300">${escapeHtml(d.durationValue)}</span>
         <span class="text-[10px] px-1.5 py-0.5 rounded font-bold mr-1 ${durationBadgeClass}">${escapeHtml(d.durationMethod)}</span>
       </td>
-      <td class="p-3 text-xs text-slate-300 min-w-[180px] max-w-[260px] truncate" title="${escapeHtml(d.notes)}">${escapeHtml(d.notes)}</td>
+      <td class="p-3 text-xs text-slate-300 min-w-[200px] max-w-[300px] align-top" title="${escapeHtml(d.notes)}"><div class="whitespace-pre-wrap break-words leading-relaxed">${escapeHtml(d.notes)}</div></td>
       <td class="p-3 text-xs text-slate-300 min-w-[140px] whitespace-normal">${escapeHtml(d.colleaguesStr)}</td>
       <td class="p-3 text-center whitespace-nowrap">${photoThumb}</td>
       <td class="p-3 whitespace-nowrap">
@@ -5948,7 +5974,7 @@ function exportToExcel() {
 
   const headers = [
     'ردیف',
-    'شماره پرسنلی',
+    'شماره پرسنلی مجری',
     'نام و نام خانوادگی',
     'سرپرستی',
     'واحد',
@@ -6060,7 +6086,7 @@ function printReportsAsPDF() {
         <td style="font-family:monospace;">${escapeHtml(d.rebuildable)}</td>
         <td>${escapeHtml(d.activityFull)}</td>
         <td>${escapeHtml(d.durationWithMethod)}</td>
-        <td style="font-size:10px;">${escapeHtml(d.notes)}</td>
+        <td style="font-size:10px; white-space:pre-wrap; word-break:break-word; max-width:240px;">${escapeHtml(d.notes)}</td>
         <td style="font-size:10px;">${escapeHtml(d.colleaguesStr)}</td>
         <td style="text-align:center;">${photoText}</td>
         <td style="font-size:10px;">${escapeHtml(d.dateTimeStr)}</td>
@@ -6107,7 +6133,7 @@ function printReportsAsPDF() {
         <thead>
           <tr>
             <th style="width:25px; text-align:center;">#</th>
-            <th style="width:65px; text-align:center;">پرسنلی</th>
+            <th style="width:75px; text-align:center;">شماره پرسنلی مجری</th>
             <th style="width:110px;">نام و نام خانوادگی</th>
             <th style="width:85px;">سرپرستی</th>
             <th style="width:75px;">واحد</th>
