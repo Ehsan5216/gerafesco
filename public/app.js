@@ -4,7 +4,7 @@
  */
 
 // نسخه رسمی و سراسری پروژه - پس از هر بار تغییرات، این نسخه تغییر می‌یابد تا برنامه‌های نصب‌شده قدیمی بروزرسانی شوند
-var APP_VERSION = '3.3.0';
+var APP_VERSION = '3.3.1';
 window.APP_VERSION = APP_VERSION;
 
 // ==========================================
@@ -472,20 +472,153 @@ function initThemeUI() {
 const OPERATOR_STORAGE_KEY = 'automation_operator_profile';
 const OPERATOR_IDB_NAME = 'automation_pwa_persistent_db';
 const OPERATOR_IDB_STORE = 'kv_store';
+const PENDING_GRAPHS_IDB_STORE = 'pending_graphs';
+const OFFLINE_IDB_VERSION = 2;
 
 function openOperatorPersistDB() {
   return new Promise((resolve, reject) => {
     if (typeof indexedDB === 'undefined') return reject(new Error('No IndexedDB'));
-    const req = indexedDB.open(OPERATOR_IDB_NAME, 1);
+    const req = indexedDB.open(OPERATOR_IDB_NAME, OFFLINE_IDB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(OPERATOR_IDB_STORE)) {
         db.createObjectStore(OPERATOR_IDB_STORE);
       }
+      if (!db.objectStoreNames.contains(PENDING_GRAPHS_IDB_STORE)) {
+        const store = db.createObjectStore(PENDING_GRAPHS_IDB_STORE, { keyPath: 'offlineId' });
+        store.createIndex('timestamp', 'timestamp', { unique: false });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
+}
+
+function isOfflineOrNetworkFailure(err) {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return true;
+  if (!err) return false;
+  const code = String(err.code || '').toUpperCase();
+  if (
+    err.isNetworkError ||
+    code === 'NETWORK_ERROR' ||
+    code === 'WORKER_INACTIVE' ||
+    code === 'D1_NOT_BOUND' ||
+    code === 'CONNECTION_ERROR'
+  ) {
+    return true;
+  }
+  if (typeof err.status === 'number' && err.status >= 500) return true;
+  if (err.status === undefined && (err.name === 'TypeError' || /fetch|network|offline|timeout/i.test(String(err.message || '')))) {
+    return true;
+  }
+  return false;
+}
+
+async function enqueuePendingGraphRecord(record) {
+  const offlineId = String(
+    record.offlineId ||
+    record.id ||
+    `graph_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  );
+  const queuedRecord = {
+    ...record,
+    id: offlineId,
+    offlineId,
+    syncStatus: 'pending',
+    queuedAt: record.queuedAt || new Date().toISOString(),
+  };
+
+  try {
+    if (navigator.storage && typeof navigator.storage.persist === 'function') {
+      navigator.storage.persist().catch(() => {});
+    }
+  } catch (e) {}
+
+  const db = await openOperatorPersistDB();
+  await new Promise((resolve, reject) => {
+    try {
+      const tx = db.transaction(PENDING_GRAPHS_IDB_STORE, 'readwrite');
+      tx.objectStore(PENDING_GRAPHS_IDB_STORE).put(queuedRecord);
+      tx.oncomplete = () => {
+        try { db.close(); } catch (e) {}
+        resolve();
+      };
+      tx.onerror = () => {
+        const err = tx.error;
+        try { db.close(); } catch (e) {}
+        reject(err || new Error('Failed to store offline graph'));
+      };
+    } catch (err) {
+      try { db.close(); } catch (e) {}
+      reject(err);
+    }
+  });
+
+  try {
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+      navigator.serviceWorker.ready
+        .then((reg) => reg.sync && reg.sync.register('sync-pending-graphs'))
+        .catch(() => {});
+    }
+  } catch (e) {}
+
+  return offlineId;
+}
+
+async function getPendingGraphQueue() {
+  try {
+    const db = await openOperatorPersistDB();
+    return await new Promise((resolve) => {
+      try {
+        if (!db.objectStoreNames.contains(PENDING_GRAPHS_IDB_STORE)) {
+          try { db.close(); } catch (e) {}
+          resolve([]);
+          return;
+        }
+        const tx = db.transaction(PENDING_GRAPHS_IDB_STORE, 'readonly');
+        const req = tx.objectStore(PENDING_GRAPHS_IDB_STORE).getAll();
+        req.onsuccess = () => {
+          try { db.close(); } catch (e) {}
+          const list = Array.isArray(req.result) ? req.result : [];
+          list.sort((a, b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
+          resolve(list);
+        };
+        req.onerror = () => {
+          try { db.close(); } catch (e) {}
+          resolve([]);
+        };
+      } catch (e) {
+        try { db.close(); } catch (err) {}
+        resolve([]);
+      }
+    });
+  } catch (e) {
+    return [];
+  }
+}
+
+async function removePendingGraphFromQueue(offlineId) {
+  if (!offlineId) return;
+  try {
+    const db = await openOperatorPersistDB();
+    await new Promise((resolve) => {
+      try {
+        const tx = db.transaction(PENDING_GRAPHS_IDB_STORE, 'readwrite');
+        tx.objectStore(PENDING_GRAPHS_IDB_STORE).delete(String(offlineId));
+        tx.oncomplete = () => {
+          try { db.close(); } catch (e) {}
+          resolve();
+        };
+        tx.onerror = () => {
+          try { db.close(); } catch (e) {}
+          resolve();
+        };
+      } catch (e) {
+        try { db.close(); } catch (err) {}
+        resolve();
+      }
+    });
+  } catch (e) {}
 }
 
 function enrichOperatorFromPersonnelDB(op) {
@@ -2900,7 +3033,7 @@ async function getOrFetchAllAssetRebuildables(forceRefresh = false) {
     if (st.d1Connected) {
       records = forceRefresh ? await getAllAssetRebuildableRecordsFromDB() : (st.assets.length ? [...st.assets] : await getAllAssetRebuildableRecordsFromDB());
     } else {
-      records = [...DEFAULT_ASSET_REBUILDABLES];
+      records = (st.assets && st.assets.length > 0) ? [...st.assets] : [...DEFAULT_ASSET_REBUILDABLES];
     }
     records = await ensureDefaultAssetRebuildables(records);
     window.AppState.assetRecords = records || [];
@@ -3461,11 +3594,11 @@ async function handleGraphFormSubmit(e) {
     }
   }
 
-  if (!requireCloudAuth(true)) {
-    return;
-  }
+  const offlineClientId = `graph_${now.getTime()}_${Math.random().toString(36).slice(2, 8)}`;
 
   const graphRecord = {
+    id: offlineClientId,
+    offlineId: offlineClientId,
     timestamp: now.getTime(),
     jalaliDate: jalali.dateNumStr,
     jalaliTime: jalali.timeStr,
@@ -3487,23 +3620,58 @@ async function handleGraphFormSubmit(e) {
     durationFormatted: durationFormatted,
     durationDigital: durationDigital,
     durationMethod: (window.StopwatchState && window.StopwatchState.elapsedTime > 0) ? 'اتوماتیک (کرنومتر)' : (durationTotalSeconds > 0 ? 'دستی' : 'نامشخص'),
-    syncStatus: 'synced',
-    syncedAt: now.toISOString()
+    syncStatus: isOnline ? 'synced' : 'pending',
+    syncedAt: isOnline ? now.toISOString() : ''
   };
 
+  const saveOfflineAndReset = async (reasonMsg) => {
+    try {
+      const queuedId = await enqueuePendingGraphRecord(graphRecord);
+      showToast(
+        reasonMsg ||
+          `💾 گزارش با شناسه #${queuedId} به‌صورت آفلاین در حافظه PWA ذخیره شد و در اولین اتصال اینترنت به دیتابیس کلادفلر ارسال می‌شود.`,
+        'info'
+      );
+      try {
+        resetGraphForm();
+      } catch (resetErr) {
+        console.warn('Error resetting graph form after offline save:', resetErr);
+      }
+      if (typeof updatePendingQueueCount === 'function') await updatePendingQueueCount();
+    } catch (idbErr) {
+      console.error('Offline queue save failed:', idbErr);
+      showToast('خطا در ذخیره‌سازی آفلاین در حافظه دستگاه.', 'error');
+    }
+  };
+
+  if (!isOnline) {
+    await saveOfflineAndReset(
+      `💾 در حالت آفلاین ثبت شد (#${offlineClientId}). به‌محض اتصال اینترنت به‌صورت خودکار به کلادفلر ارسال می‌شود.`
+    );
+    return;
+  }
+
   try {
-    const id = await saveGraphRecord(graphRecord);
-    showToast(`فعالیت با شناسه #${id} با موفقیت روی پایگاه داده مرکزی سایت ذخیره شد.`, 'success');
+    const savedId = await saveGraphRecord(graphRecord);
+    showToast(`فعالیت با شناسه #${savedId} با موفقیت روی پایگاه داده کلادفلر ذخیره شد.`, 'success');
 
     try {
       resetGraphForm();
     } catch (resetErr) {
       console.warn('Error resetting graph form after record save:', resetErr);
     }
-    if (typeof updatePendingQueueCount === 'function') updatePendingQueueCount();
+    if (typeof updatePendingQueueCount === 'function') await updatePendingQueueCount();
+    // اگر گزارش‌های قدیمی‌تری در صف آفلاین مانده‌اند، همگام‌سازی شوند
+    if (typeof syncPendingRecords === 'function') syncPendingRecords(true);
   } catch (err) {
-    console.error('Error saving cloud record', err);
-    const msg = err?.message || 'خطا در ذخیره‌سازی فعالیت روی دیتابیس کلادفلر. اتصال اینترنت خود را بررسی نمایید.';
+    console.warn('Cloud save attempt failed, checking offline fallback:', err);
+    if (isOfflineOrNetworkFailure(err)) {
+      await saveOfflineAndReset(
+        `💾 ارتباط با سرور کلادفلر موقتاً در دسترس نبود؛ گزارش با شناسه #${offlineClientId} در صف آفلاین ذخیره شد و در اولین اتصال ارسال می‌شود.`
+      );
+      return;
+    }
+    const msg = err?.message || 'خطا در ذخیره‌سازی فعالیت روی دیتابیس کلادفلر.';
     showToast(msg, 'error');
   }
 }
@@ -3619,9 +3787,7 @@ function updateNetworkStatusIndicator() {
 
 async function updatePendingQueueCount() {
   try {
-    const st = getCloudState();
-    const records = st.d1Connected ? (st.graphs || []) : [];
-    const pendingList = records.filter((r) => r.syncStatus === 'pending');
+    const pendingList = await getPendingGraphQueue();
     const count = pendingList.length;
 
     const countEl = document.getElementById('pendingQueueCount');
@@ -3635,56 +3801,148 @@ async function updatePendingQueueCount() {
         badgeEl.classList.add('hidden');
       }
     }
+    return count;
   } catch (e) {
     console.error('Queue count check error', e);
+    return 0;
   }
 }
 
-async function syncPendingRecords() {
-  if (!navigator.onLine) {
-    showToast('در حال حاضر دسترسی به اینترنت مقدور نیست.', 'warning');
+async function syncPendingRecords(silent = false) {
+  if (window._isSyncingPendingGraphs) return;
+
+  const pendingList = await getPendingGraphQueue();
+  await updatePendingQueueCount();
+
+  if (pendingList.length === 0) {
+    if (!silent) {
+      showToast('تمام اطلاعات مستقیماً روی سرور کلادفلر همگام هستند و صف آفلاینی وجود ندارد.', 'info');
+    }
     return;
   }
-  if (!requireCloudAuth(true)) return;
+
+  if (!navigator.onLine) {
+    if (!silent) {
+      showToast(`در حال حاضر دسترسی به اینترنت برقرار نیست (${pendingList.length} گزارش در صف آفلاین آماده ارسال است).`, 'warning');
+    }
+    return;
+  }
+
+  const c = getCloudDB();
+  if (!c || typeof c.saveGraphRecord !== 'function') {
+    if (!silent) {
+      showToast('هسته ارتباط با دیتابیس کلادفلر هنوز آماده نیست.', 'warning');
+    }
+    return;
+  }
+
+  window._isSyncingPendingGraphs = true;
+  let syncedCount = 0;
 
   try {
-    const records = await getAllGraphRecords();
-    const pendingList = records.filter((r) => r.syncStatus === 'pending');
-
-    if (pendingList.length === 0) {
-      showToast('تمام اطلاعات مستقیماً روی سرور مرکزی همگام هستند و صفی وجود ندارد.', 'info');
+    if (!getCloudState().d1Connected) {
+      await refreshCloudConnection(false);
+    }
+    if (!getCloudState().d1Connected) {
+      if (!silent) {
+        showToast('سرور کلادفلر (D1) هنوز در دسترس نیست؛ گزارش‌ها در صف آفلاین محفوظ هستند.', 'warning');
+      }
       return;
     }
 
-    showToast(`در حال همگام‌سازی ${pendingList.length} رکورد با سرور مرکزی...`, 'info');
+    if (!silent) {
+      showToast(`در حال ارسال ${pendingList.length} گزارش آفلاین به دیتابیس کلادفلر...`, 'info');
+    }
 
     for (const rec of pendingList) {
-      rec.syncStatus = 'synced';
-      rec.syncedAt = new Date().toISOString();
-      await updateGraphRecord(rec);
+      const payload = {
+        ...rec,
+        id: rec.offlineId || rec.id,
+        syncStatus: 'synced',
+        syncedAt: new Date().toISOString(),
+      };
+      try {
+        await c.saveGraphRecord(payload);
+        await removePendingGraphFromQueue(rec.offlineId || rec.id);
+        syncedCount += 1;
+      } catch (itemErr) {
+        console.warn('Pending offline sync interrupted for record:', rec.offlineId, itemErr);
+        if (isOfflineOrNetworkFailure(itemErr)) {
+          break;
+        }
+        // در صورت خطای اعتبارسنجی غیرمنتظره نیز سایر رکوردها متوقف نشوند یا گزارش شود
+        break;
+      }
     }
 
     await updatePendingQueueCount();
-    showToast(`همگام‌سازی موفق: تمام ${pendingList.length} رکورد در سرور مرکزی نهایی شدند.`, 'success');
-    if (window.AppState.currentView === 'admin') {
-      loadAdminReports();
+
+    if (syncedCount > 0) {
+      showToast(`✅ همگام‌سازی خودکار انجام شد: ${syncedCount} گزارش آفلاین به دیتابیس کلادفلر ارسال گردید.`, 'success');
+      if (window.AppState.currentView === 'admin' && typeof loadAdminReports === 'function') {
+        loadAdminReports(true);
+      }
+    } else if (!silent) {
+      showToast('ارسال صف آفلاین انجام نشد؛ پس از برقراری پایدار اینترنت مجدداً تلاش می‌شود.', 'warning');
     }
   } catch (e) {
     console.error('Sync failed', e);
-    showToast('خطا در همگام‌سازی رکوردها با سرور مرکزی', 'error');
+    if (!silent) {
+      showToast('خطا در همگام‌سازی صف آفلاین با دیتابیس کلادفلر', 'error');
+    }
+  } finally {
+    window._isSyncingPendingGraphs = false;
   }
 }
 
-window.addEventListener('online', () => {
+window.addEventListener('online', async () => {
   updateNetworkStatusIndicator();
-  showToast('اتصال به اینترنت برقرار شد. در حال همگام‌سازی داده‌های صف...', 'info');
-  syncPendingRecords();
+  const pendingCount = await updatePendingQueueCount();
+  if (pendingCount > 0) {
+    showToast(`اتصال اینترنت برقرار شد. در حال ارسال خودکار ${pendingCount} گزارش آفلاین به کلادفلر...`, 'info');
+  }
+  setTimeout(async () => {
+    await refreshCloudConnection(false);
+    await syncPendingRecords(true);
+  }, 600);
 });
 
 window.addEventListener('offline', () => {
   updateNetworkStatusIndicator();
-  showToast('ارتباط با شبکه قطع شد. سیستم در حالت آفلاین فعال است.', 'warning');
+  showToast('ارتباط با اینترنت قطع شد. سیستم به‌صورت ۱۰۰٪ آفلاین فعال است و گزارش‌ها پس از اتصال خودکار ارسال می‌شوند.', 'warning');
 });
+
+window.addEventListener('cloudDataUpdated', (ev) => {
+  if (ev && ev.detail && ev.detail.reason === 'status' && getCloudState().d1Connected && navigator.onLine) {
+    syncPendingRecords(true);
+  }
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && navigator.onLine) {
+    updatePendingQueueCount().then((cnt) => {
+      if (cnt > 0) syncPendingRecords(true);
+    });
+  }
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'TRIGGER_OFFLINE_SYNC') {
+      syncPendingRecords(true);
+    }
+  });
+}
+
+setInterval(() => {
+  if (navigator.onLine && !window._isSyncingPendingGraphs) {
+    getPendingGraphQueue().then((list) => {
+      if (list.length > 0) {
+        syncPendingRecords(true);
+      }
+    });
+  }
+}, 25000);
 
 // ==========================================
 // ۱۱. ساعت و تاریخ زنده
@@ -7946,6 +8204,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initThemeUI();
   updateCloudAuthUI();
   loadPersonnelData();
+  applyPersonnelOverrides();
   loadOperatorProfile();
   populateOrgDropdowns();
   renderOrgManagementUI();
@@ -7956,7 +8215,11 @@ document.addEventListener('DOMContentLoaded', () => {
   startAutoGPS();
   setupCameraInput();
   updateNetworkStatusIndicator();
-  updatePendingQueueCount();
+  updatePendingQueueCount().then((cnt) => {
+    if (cnt > 0 && navigator.onLine) {
+      syncPendingRecords(true);
+    }
+  });
   setupPWAInstall();
   initPwaBackGuard();
   initAssetRebuildables().then(() => populateAsettDatalist());

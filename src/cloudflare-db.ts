@@ -58,6 +58,36 @@ export interface PersonnelOverrideDoc {
 const ORG_STRUCTURE_VERSION = 'v3_telecom_tech_workshops';
 const ADMIN_TOKEN_KEY = 'cf_admin_token';
 const OPERATOR_PROFILE_KEY = 'automation_operator_profile';
+const BOOTSTRAP_CACHE_KEY = 'cf_offline_bootstrap_cache_v1';
+
+interface OfflineBootstrapCache {
+  orgStructure?: OrgStructureData;
+  assets?: AssetItem[];
+  personnelOverrides?: PersonnelOverrideDoc[];
+  savedAt?: string;
+}
+
+function readOfflineBootstrapCache(): OfflineBootstrapCache {
+  try {
+    const raw = localStorage.getItem(BOOTSTRAP_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as OfflineBootstrapCache;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeOfflineBootstrapCache(data: OfflineBootstrapCache): void {
+  try {
+    localStorage.setItem(BOOTSTRAP_CACHE_KEY, JSON.stringify({
+      ...data,
+      savedAt: new Date().toISOString(),
+    }));
+  } catch {
+    // ignore quota errors
+  }
+}
 
 function readInitialOperatorProfile(): Record<string, unknown> | null {
   try {
@@ -104,6 +134,8 @@ const DEFAULT_UNITS: OrgUnit[] = [
   { name: 'اتوماسیون آبرسانی', supervision: 'سرپرستی اتوماسیون کارگاه ها' },
 ];
 
+const initialBootCache = readOfflineBootstrapCache();
+
 const cloudCache = {
   ready: false,
   d1Connected: false,
@@ -113,13 +145,17 @@ const cloudCache = {
   adminProfile: null as CloudAdminRecord | null,
   graphs: [] as Array<Record<string, unknown>>,
   admins: [] as CloudAdminRecord[],
-  orgStructure: {
-    version: ORG_STRUCTURE_VERSION,
-    supervisions: [...DEFAULT_SUPERVISIONS],
-    units: [...DEFAULT_UNITS],
-  } as OrgStructureData,
-  assets: [] as AssetItem[],
-  personnelOverrides: [] as PersonnelOverrideDoc[],
+  orgStructure: (initialBootCache.orgStructure && Array.isArray(initialBootCache.orgStructure.supervisions)
+    ? initialBootCache.orgStructure
+    : {
+        version: ORG_STRUCTURE_VERSION,
+        supervisions: [...DEFAULT_SUPERVISIONS],
+        units: [...DEFAULT_UNITS],
+      }) as OrgStructureData,
+  assets: (Array.isArray(initialBootCache.assets) ? initialBootCache.assets : []) as AssetItem[],
+  personnelOverrides: (Array.isArray(initialBootCache.personnelOverrides)
+    ? initialBootCache.personnelOverrides
+    : []) as PersonnelOverrideDoc[],
   operatorProfile: readInitialOperatorProfile(),
 };
 
@@ -165,11 +201,19 @@ async function apiFetch<T = Record<string, unknown>>(
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const res = await fetch(path, {
-    ...options,
-    headers,
-    cache: 'no-store',
-  });
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      ...options,
+      headers,
+      cache: 'no-store',
+    });
+  } catch (networkErr) {
+    const err = new Error((networkErr as Error)?.message || 'عدم دسترسی به شبکه');
+    (err as unknown as { code?: string; isNetworkError?: boolean }).code = 'NETWORK_ERROR';
+    (err as unknown as { isNetworkError?: boolean }).isNetworkError = true;
+    throw err;
+  }
 
   const ctype = res.headers.get('content-type') || '';
   if (!ctype.includes('application/json')) {
@@ -225,6 +269,12 @@ export async function refreshBootstrap(): Promise<boolean> {
       notifyUI('personnelOverrides');
     }
 
+    writeOfflineBootstrapCache({
+      orgStructure: cloudCache.orgStructure,
+      assets: cloudCache.assets,
+      personnelOverrides: cloudCache.personnelOverrides,
+    });
+
     cloudCache.ready = true;
     notifyUI('status');
     return true;
@@ -234,6 +284,8 @@ export async function refreshBootstrap(): Promise<boolean> {
     cloudCache.d1Connected = false;
     cloudCache.d1ErrorCode = e.code || 'CONNECTION_ERROR';
     cloudCache.d1Error = e.message || 'خطا در اتصال به پایگاه داده کلادفلر';
+    if (cloudCache.assets.length > 0) notifyUI('assets');
+    if (cloudCache.personnelOverrides.length > 0) notifyUI('personnelOverrides');
     notifyUI('status');
     return false;
   }

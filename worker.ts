@@ -620,7 +620,13 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
   if (path === '/api/graphs' && method === 'POST') {
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const now = new Date().toISOString();
-    const id = makeId('graph');
+    const requestedId = sStr(body.id || body.offlineId, 80);
+    const id = /^graph_[a-zA-Z0-9_-]{6,64}$/.test(requestedId) ? requestedId : makeId('graph');
+
+    const existing = await db.prepare('SELECT id FROM graphs WHERE id = ?').bind(id).first<{ id: string }>();
+    if (existing) {
+      return json({ ok: true, id: existing.id, duplicate: true, photos: [] });
+    }
 
     const rawPhotos = Array.isArray(body.photos)
       ? body.photos

@@ -1121,7 +1121,7 @@
             </h1>
             <button type="button" onclick="checkAppUpdate(true)" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition cursor-pointer shadow-sm" title="نسخه پروژه - کلیک برای بررسی بروزرسانی آنلاین">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span id="appHeaderVersionBadge">v3.3.0</span>
+              <span id="appHeaderVersionBadge">v3.3.1</span>
             </button>
           </div>
           <button type="button" onclick="openAboutSystemPage()" class="text-[11px] sm:text-xs text-amber-300 hover:text-amber-200 font-semibold tracking-normal mt-0.5 transition inline-flex items-center gap-1 cursor-pointer group text-right active:scale-95" style="text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);" title="درباره سامانه و شناسنامه نرم‌افزار (کلیک کنید)">
@@ -3465,13 +3465,13 @@
        صفحه اختصاصی درباره سامانه و شناسنامه نرم‌افزار
        (اسلاید ۵ ثانیه‌ای ورود داده به دیتابیس با آیکون چرخشی + صفحه متن شناسنامه)
        ========================================================================= -->
-  <div id="aboutSystemModal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/98 backdrop-blur-2xl p-4 select-none overflow-y-auto" style="background: #020617 !important;">
+  <div id="aboutSystemModal" class="hidden fixed inset-0 z-[1000] flex items-start sm:items-center justify-center bg-slate-950/98 backdrop-blur-2xl p-3 sm:p-4 select-none overflow-y-auto" style="background: #020617 !important;">
     <!-- نورهای پس‌زمینه صنعتی -->
-    <div class="absolute -top-32 -right-32 w-96 h-96 rounded-full blur-3xl pointer-events-none" style="background: rgba(245, 158, 11, 0.12);"></div>
-    <div class="absolute -bottom-32 -left-32 w-96 h-96 rounded-full blur-3xl pointer-events-none" style="background: rgba(6, 182, 212, 0.12);"></div>
+    <div class="fixed -top-32 -right-32 w-96 h-96 rounded-full blur-3xl pointer-events-none" style="background: rgba(245, 158, 11, 0.12);"></div>
+    <div class="fixed -bottom-32 -left-32 w-96 h-96 rounded-full blur-3xl pointer-events-none" style="background: rgba(6, 182, 212, 0.12);"></div>
 
     <!-- فاز ۱: اسلاید ۵ ثانیه‌ای ورود اطلاعات به نماد دیتابیس با آیکون چرخشی -->
-    <div id="aboutSlidePhase" class="relative z-10 w-full max-w-xl flex flex-col items-center justify-center text-center p-4 sm:p-6 space-y-6 transition-all duration-500">
+    <div id="aboutSlidePhase" class="relative z-10 w-full max-w-xl my-auto flex flex-col items-center justify-center text-center p-3 sm:p-6 space-y-4 sm:space-y-6 transition-all duration-500">
       
       <!-- برچسب وضعیت در بالای اسلاید -->
       <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-xs font-mono shadow-lg shadow-cyan-950/50">
@@ -3539,49 +3539,49 @@
     </div>
 
     <!-- فاز ۲: صفحه اصلی متن معرفی و شناسنامه نرم‌افزار -->
-    <div id="aboutContentPhase" class="hidden relative z-10 w-full max-w-2xl bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-2 border-amber-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-amber-500/20 space-y-6 opacity-0 transition-opacity duration-700 overflow-hidden">
+    <div id="aboutContentPhase" class="hidden relative z-10 w-full max-w-2xl my-auto max-h-[calc(100dvh-1.5rem)] overflow-y-auto flex-col bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-2 border-amber-500/50 rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl shadow-amber-500/20 space-y-4 sm:space-y-5 opacity-0 transition-opacity duration-700">
       
       <!-- هدر صفحه با دکمه بستن -->
-      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-2xl bg-slate-950 p-1 border border-amber-500/40 shadow flex items-center justify-center shrink-0">
+      <div class="flex items-start sm:items-center justify-between gap-2.5 border-b border-slate-800 pb-3 sm:pb-4 shrink-0">
+        <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-slate-950 p-1 border border-amber-500/40 shadow flex items-center justify-center shrink-0">
             <img src="/app-logo.png?v=6" onerror="if(!this.dataset.tried){this.dataset.tried=1;this.src='/app-logo.png';}" alt="آیکون سیستم" class="w-full h-full object-contain">
           </div>
-          <div>
-            <h2 class="text-base sm:text-lg font-black text-white">سامانه ثبت فعالیت‌های دوره‌ای و تعمیراتی</h2>
-            <p class="text-xs text-amber-400 font-semibold mt-0.5">مدیریت اتوماسیون و ارتباطات ذوب آهن اصفهان</p>
+          <div class="min-w-0 flex-1">
+            <h2 class="text-sm sm:text-lg font-black text-white leading-snug break-words">سامانه ثبت فعالیت‌های دوره‌ای و تعمیراتی</h2>
+            <p class="text-[11px] sm:text-xs text-amber-400 font-semibold mt-0.5 break-words">مدیریت اتوماسیون و ارتباطات ذوب آهن اصفهان</p>
           </div>
         </div>
-        <button type="button" onclick="closeAboutSystemPage()" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition cursor-pointer" title="بستن">
+        <button type="button" onclick="closeAboutSystemPage()" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition cursor-pointer shrink-0" title="بستن">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
 
-      <!-- متن اصلی شناسنامه با دیزاین فاخر و گیرا -->
-      <div class="space-y-4">
-        <div class="relative bg-slate-950/70 border-r-4 border-amber-500 p-5 sm:p-6 rounded-2xl shadow-inner">
-          <svg class="w-8 h-8 text-amber-500/30 absolute top-3 left-3" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
-          <p class="text-sm sm:text-base leading-relaxed sm:leading-loose text-slate-100 font-medium text-justify">
+      <!-- متن اصلی شناسنامه با دیزاین فاخر و نمایش کامل در موبایل -->
+      <div class="space-y-3.5 sm:space-y-4">
+        <div class="relative bg-slate-950/70 border-r-4 border-amber-500 p-4 sm:p-6 rounded-2xl shadow-inner">
+          <svg class="w-6 h-6 sm:w-8 sm:h-8 text-amber-500/25 absolute top-2.5 left-2.5 pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
+          <p class="relative z-10 text-[13.5px] sm:text-base leading-7 sm:leading-loose text-slate-100 font-medium text-right sm:text-justify break-words">
             این نرم افزار جهت مکانیزه کردن و سهولت ثبت فعالیت های دوره ای و تعمیراتی در کارخانه بزرگ ذوب آهن اصفهان به ایده مهندس محسن جعفری طراحی و ساخته شده است و امید است بتواند سرعت و صحت اطلاعات تعمیراتی و دوره ای را بهبود بخشیده و تاثیر بسزایی در فرآیند تعمیرات و نگهداری سازمان داشته باشد
           </p>
         </div>
 
         <!-- کارت اعتبار و مشخصات طراح و برنامه‌نویس -->
-        <div class="flex items-center gap-3.5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 shadow-md">
-          <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center font-black shadow-lg shrink-0">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+        <div class="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 shadow-md">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center font-black shadow-lg shrink-0">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
           </div>
-          <div>
+          <div class="min-w-0 flex-1">
             <p class="text-[11px] text-amber-400 font-bold">مهندسی نرم‌افزار و پیاده‌سازی</p>
-            <p class="text-sm sm:text-base font-black text-white mt-0.5">طراح و برنامه نویس:احسان ابوالقاسمی</p>
+            <p class="text-xs sm:text-base font-black text-white mt-0.5 break-words">طراح و برنامه نویس: احسان ابوالقاسمی</p>
           </div>
         </div>
 
         <!-- کارت نگارش و وضعیت بروزرسانی پروژه (ثبت نسخه) -->
-        <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 p-3 sm:p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs">
           <div class="flex items-center gap-2">
             <span class="text-slate-400">نگارش پروژه:</span>
-            <span id="aboutModalVersionBadge" class="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/30">v2.5.8</span>
+            <span id="aboutModalVersionBadge" class="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/30">v3.3.1</span>
           </div>
           <button type="button" onclick="checkAppUpdate(true)" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-semibold transition cursor-pointer shadow">
             <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -3591,7 +3591,7 @@
       </div>
 
       <!-- دکمه بازگشت به صفحه اصلی -->
-      <div class="pt-2 flex justify-end">
+      <div class="pt-1 flex justify-end shrink-0">
         <button type="button" onclick="closeAboutSystemPage()" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
           <span>بازگشت به صفحه اصلی</span>
@@ -3770,6 +3770,7 @@
       if (aboutProgressInterval) clearInterval(aboutProgressInterval);
 
       modal.classList.remove('hidden');
+      modal.scrollTop = 0;
       slidePhase.classList.remove('hidden', 'opacity-0');
       slidePhase.classList.add('flex', 'opacity-100');
       contentPhase.classList.add('hidden', 'opacity-0');
@@ -3804,6 +3805,7 @@
       if (aboutSlideTimer) clearTimeout(aboutSlideTimer);
       if (aboutProgressInterval) clearInterval(aboutProgressInterval);
 
+      const modal = document.getElementById('aboutSystemModal');
       const slidePhase = document.getElementById('aboutSlidePhase');
       const contentPhase = document.getElementById('aboutContentPhase');
       if (!slidePhase || !contentPhase) return;
@@ -3816,7 +3818,9 @@
         slidePhase.classList.remove('flex');
 
         contentPhase.classList.remove('hidden');
-        contentPhase.classList.add('flex');
+        contentPhase.classList.add('flex', 'flex-col');
+        if (modal) modal.scrollTop = 0;
+        contentPhase.scrollTop = 0;
         setTimeout(function() {
           contentPhase.classList.remove('opacity-0');
           contentPhase.classList.add('opacity-100');
@@ -3842,6 +3846,6 @@
   <!-- بارگذاری اطلاعات اولیه پرسنل از فایل استخراج‌شده از اکسل -->
   <script src="personnel-data.js?v=3"></script>
   <!-- بارگذاری هسته منطق و عملیات مرکزی سیستم -->
-  <script src="app.js?v=3.3.0"></script>
+  <script src="app.js?v=3.3.1"></script>
 </body>
 </html>
