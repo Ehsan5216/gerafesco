@@ -57,6 +57,26 @@ export interface PersonnelOverrideDoc {
 
 const ORG_STRUCTURE_VERSION = 'v3_telecom_tech_workshops';
 const ADMIN_TOKEN_KEY = 'cf_admin_token';
+const OPERATOR_PROFILE_KEY = 'automation_operator_profile';
+
+function readInitialOperatorProfile(): Record<string, unknown> | null {
+  try {
+    const raw = localStorage.getItem(OPERATOR_PROFILE_KEY) || sessionStorage.getItem(OPERATOR_PROFILE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (parsed && (parsed.personnelId || parsed.name)) {
+      try {
+        localStorage.setItem(OPERATOR_PROFILE_KEY, JSON.stringify(parsed));
+      } catch {
+        // ignore
+      }
+      return parsed;
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return null;
+}
 
 const DEFAULT_SUPERVISIONS: string[] = [
   'سرپرستی مخابرات',
@@ -100,7 +120,7 @@ const cloudCache = {
   } as OrgStructureData,
   assets: [] as AssetItem[],
   personnelOverrides: [] as PersonnelOverrideDoc[],
-  operatorProfile: null as Record<string, unknown> | null,
+  operatorProfile: readInitialOperatorProfile(),
 };
 
 function notifyUI(reason: string) {
@@ -262,7 +282,9 @@ export async function adminLogout(): Promise<void> {
 export async function saveUserOperatorProfile(profile: Record<string, unknown>): Promise<void> {
   cloudCache.operatorProfile = { ...profile };
   try {
-    sessionStorage.setItem('automation_operator_profile', JSON.stringify(profile));
+    const serialized = JSON.stringify(profile);
+    localStorage.setItem(OPERATOR_PROFILE_KEY, serialized);
+    sessionStorage.setItem(OPERATOR_PROFILE_KEY, serialized);
   } catch {
     // ignore
   }
@@ -271,7 +293,8 @@ export async function saveUserOperatorProfile(profile: Record<string, unknown>):
 export async function clearUserOperatorProfile(): Promise<void> {
   cloudCache.operatorProfile = null;
   try {
-    sessionStorage.removeItem('automation_operator_profile');
+    localStorage.removeItem(OPERATOR_PROFILE_KEY);
+    sessionStorage.removeItem(OPERATOR_PROFILE_KEY);
   } catch {
     // ignore
   }

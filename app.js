@@ -328,18 +328,9 @@ window.onCloudStateSync = function(reason) {
 
   if (reason === 'operatorProfile') {
     if (st.operatorProfile && (st.operatorProfile.personnelId || st.operatorProfile.name)) {
-      const cloudOp = { ...st.operatorProfile };
-      const match = findPersonnelByCode(cloudOp.personnelId);
-      if (match) {
-        cloudOp.nationalId = cloudOp.nationalId || match.nationalId || '';
-        cloudOp.mobile = cloudOp.mobile || match.mobile || '';
-        cloudOp.firstName = cloudOp.firstName || match.firstName || '';
-        cloudOp.lastName = cloudOp.lastName || match.lastName || '';
-      }
+      const cloudOp = enrichOperatorFromPersonnelDB({ ...st.operatorProfile });
       window.AppState.operator = cloudOp;
-      try {
-        sessionStorage.setItem('automation_operator_profile', JSON.stringify(cloudOp));
-      } catch (e) {}
+      persistOperatorPermanently(cloudOp);
       updateOperatorSummaryUI();
       populateAsettDatalist();
     }
@@ -478,27 +469,140 @@ function initThemeUI() {
   applyTheme(currentTheme);
 }
 
+const OPERATOR_STORAGE_KEY = 'automation_operator_profile';
+const OPERATOR_IDB_NAME = 'automation_pwa_persistent_db';
+const OPERATOR_IDB_STORE = 'kv_store';
+
+function openOperatorPersistDB() {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') return reject(new Error('No IndexedDB'));
+    const req = indexedDB.open(OPERATOR_IDB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(OPERATOR_IDB_STORE)) {
+        db.createObjectStore(OPERATOR_IDB_STORE);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function enrichOperatorFromPersonnelDB(op) {
+  if (!op || typeof op !== 'object') return op;
+  const copy = { ...op };
+  if (copy.personnelId && typeof findPersonnelByCode === 'function') {
+    const match = findPersonnelByCode(copy.personnelId);
+    if (match) {
+      if (!copy.firstName || !copy.lastName) {
+        copy.firstName = match.firstName || '';
+        copy.lastName = match.lastName || '';
+      }
+      if (!copy.nationalId) copy.nationalId = match.nationalId || '';
+      if (!copy.mobile) copy.mobile = match.mobile || '';
+    }
+  }
+  return copy;
+}
+
+function persistOperatorPermanently(profile) {
+  if (!profile || (!profile.personnelId && !profile.name)) return;
+  const serialized = JSON.stringify(profile);
+  try {
+    localStorage.setItem(OPERATOR_STORAGE_KEY, serialized);
+  } catch (e) {}
+  try {
+    sessionStorage.setItem(OPERATOR_STORAGE_KEY, serialized);
+  } catch (e) {}
+  try {
+    if (navigator.storage && typeof navigator.storage.persist === 'function') {
+      navigator.storage.persist().catch(() => {});
+    }
+  } catch (e) {}
+  openOperatorPersistDB()
+    .then((db) => {
+      try {
+        const tx = db.transaction(OPERATOR_IDB_STORE, 'readwrite');
+        tx.objectStore(OPERATOR_IDB_STORE).put(profile, OPERATOR_STORAGE_KEY);
+        tx.oncomplete = () => { try { db.close(); } catch (e) {} };
+        tx.onerror = () => { try { db.close(); } catch (e) {} };
+      } catch (e) {
+        try { db.close(); } catch (err) {}
+      }
+    })
+    .catch(() => {});
+}
+
+async function loadPersistedOperatorFromIDB() {
+  try {
+    const db = await openOperatorPersistDB();
+    return await new Promise((resolve) => {
+      try {
+        const tx = db.transaction(OPERATOR_IDB_STORE, 'readonly');
+        const req = tx.objectStore(OPERATOR_IDB_STORE).get(OPERATOR_STORAGE_KEY);
+        req.onsuccess = () => {
+          try { db.close(); } catch (e) {}
+          resolve(req.result || null);
+        };
+        req.onerror = () => {
+          try { db.close(); } catch (e) {}
+          resolve(null);
+        };
+      } catch (e) {
+        try { db.close(); } catch (err) {}
+        resolve(null);
+      }
+    });
+  } catch (e) {
+    return null;
+  }
+}
+
 function loadOperatorProfile() {
   try {
-    const st = getCloudState();
-    let op = st.operatorProfile ? { ...st.operatorProfile } : null;
+    let op = null;
+    try {
+      const savedLocal = localStorage.getItem(OPERATOR_STORAGE_KEY);
+      if (savedLocal) op = JSON.parse(savedLocal);
+    } catch (e) {}
+
     if (!op) {
-      const sess = sessionStorage.getItem('automation_operator_profile');
-      if (sess) op = JSON.parse(sess);
-    }
-    if (op) {
-      if (op.personnelId) {
-        const match = findPersonnelByCode(op.personnelId);
-        if (match) {
-          if (!op.firstName || !op.lastName) {
-            op.firstName = match.firstName || '';
-            op.lastName = match.lastName || '';
-          }
-          if (!op.nationalId) op.nationalId = match.nationalId || '';
-          if (!op.mobile) op.mobile = match.mobile || '';
-        }
+      const st = getCloudState();
+      if (st && st.operatorProfile && (st.operatorProfile.personnelId || st.operatorProfile.name)) {
+        op = { ...st.operatorProfile };
       }
+    }
+
+    if (!op) {
+      try {
+        const sess = sessionStorage.getItem(OPERATOR_STORAGE_KEY);
+        if (sess) op = JSON.parse(sess);
+      } catch (e) {}
+    }
+
+    if (op && (op.personnelId || op.name)) {
+      op = enrichOperatorFromPersonnelDB(op);
       window.AppState.operator = op;
+      persistOperatorPermanently(op);
+      const c = getCloudDB();
+      if (c && typeof c.saveUserOperatorProfile === 'function') {
+        c.saveUserOperatorProfile(op).catch(() => {});
+      }
+    } else {
+      // بازیابی پشتیبان از IndexedDB در صورت پاک شدن localStorage توسط مرورگر
+      loadPersistedOperatorFromIDB().then((idbOp) => {
+        if (idbOp && (idbOp.personnelId || idbOp.name) && (!window.AppState.operator || !window.AppState.operator.personnelId)) {
+          const restored = enrichOperatorFromPersonnelDB(idbOp);
+          window.AppState.operator = restored;
+          persistOperatorPermanently(restored);
+          const c = getCloudDB();
+          if (c && typeof c.saveUserOperatorProfile === 'function') {
+            c.saveUserOperatorProfile(restored).catch(() => {});
+          }
+          updateOperatorSummaryUI();
+          if (typeof populateAsettDatalist === 'function') populateAsettDatalist();
+        }
+      });
     }
   } catch (e) {
     console.error('Error loading operator profile', e);
@@ -603,7 +707,7 @@ function updateOperatorSummaryUI() {
   }
 }
 
-async function commitOperatorNow() {
+async function commitOperatorNow(silentToast = false) {
   if (_operatorAutoSaveTimer) {
     clearInterval(_operatorAutoSaveTimer);
     _operatorAutoSaveTimer = null;
@@ -613,17 +717,12 @@ async function commitOperatorNow() {
   if (!profile) return;
 
   window.AppState.operator = profile;
-  try {
-    sessionStorage.setItem('automation_operator_profile', JSON.stringify(profile));
-  } catch (e) {}
+  persistOperatorPermanently(profile);
 
-  let savedToCloud = false;
-  const st = getCloudState();
   const c = getCloudDB();
-  if (st.d1Connected && c && typeof c.saveUserOperatorProfile === 'function') {
+  if (c && typeof c.saveUserOperatorProfile === 'function') {
     try {
       await c.saveUserOperatorProfile(profile);
-      savedToCloud = true;
     } catch (err) {
       console.warn('Cloud operator save note:', err);
     }
@@ -637,7 +736,7 @@ async function commitOperatorNow() {
   if (commitNowBtn) commitNowBtn.classList.add('hidden');
   if (statusBadge) {
     statusBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-    statusBadge.textContent = savedToCloud ? '✓ ثبت‌شده روی سرور مرکزی' : '✓ تأییدشده در نشست فعلی';
+    statusBadge.textContent = '✓ ذخیره دائمی در دستگاه';
   }
 
   renderOperatorFields(profile);
@@ -648,15 +747,15 @@ async function commitOperatorNow() {
     syncRebuildablesForAsett(currentAsett);
   }
 
-  // پس از ذخیره خودکار، جزئیات مشخصات مجری به صورت کشوئی مخفی می‌شود
+  // پس از ذخیره دائمی، جزئیات مشخصات مجری به صورت کشوئی جمع می‌شود
   toggleOperatorAccordion(false);
 
-  showToast(
-    savedToCloud
-      ? `✓ مشخصات مجری (${profile.name || profile.firstName}) در پروفایل مرکزی ذخیره شد.`
-      : `✓ مشخصات مجری (${profile.name || profile.firstName}) در نشست فعلی فعال شد. برای ذخیره دائمی، با حساب گوگل وارد شوید.`,
-    'success'
-  );
+  if (!silentToast) {
+    showToast(
+      `✓ مشخصات مجری (${profile.name || profile.firstName}) به‌صورت دائمی در برنامه ذخیره شد و تا زمان تغییر مجری باقی می‌ماند.`,
+      'success'
+    );
+  }
 }
 window.commitOperatorNow = commitOperatorNow;
 
@@ -676,6 +775,14 @@ function applyMatchedPersonnelToHome(match) {
     mobile: match.mobile ? ('0' + String(match.mobile).replace(/^0+/, '')) : ''
   };
 
+  // ذخیره فوری و دائمی در لحظه ورود مشخصات تا با بستن برنامه نیز از بین نرود
+  window.AppState.operator = { ..._pendingOperatorData };
+  persistOperatorPermanently(_pendingOperatorData);
+  const c = getCloudDB();
+  if (c && typeof c.saveUserOperatorProfile === 'function') {
+    c.saveUserOperatorProfile(_pendingOperatorData).catch(() => {});
+  }
+
   // اسکرول نرم به سمت کارت مجری در صفحه اصلی
   const mainCard = document.getElementById('operatorMainCard');
   if (mainCard) {
@@ -684,48 +791,38 @@ function applyMatchedPersonnelToHome(match) {
     setTimeout(() => mainCard.classList.remove('ring-2', 'ring-amber-400'), 2500);
   }
 
-  // نمایش مشخصات در صفحه اصلی و باز کردن کشو در طول ۱۰ ثانیه بررسی
+  // نمایش مشخصات در صفحه اصلی و باز کردن کشو جهت مشاهده جزئیات
   renderOperatorFields(_pendingOperatorData);
   toggleOperatorAccordion(true);
+  populateAsettDatalist();
+
+  const currentAsett = document.getElementById('asettInput')?.value.trim();
+  if (currentAsett && typeof syncRebuildablesForAsett === 'function') {
+    syncRebuildablesForAsett(currentAsett);
+  }
 
   const alertBox = document.getElementById('operatorMissingAlert');
   const container = document.getElementById('operatorSummaryContainer');
   if (alertBox) alertBox.classList.add('hidden');
   if (container) container.classList.remove('hidden');
 
-  // نمایش پیام شمارش معکوس ۱۰ ثانیه‌ای جهت ذخیره خودکار
   const noticeBox = document.getElementById('operatorAutoSaveNotice');
-  const countdownText = document.getElementById('operatorAutoSaveCountdownText');
-  const countdownNumber = document.getElementById('operatorCountdownNumber');
   const commitNowBtn = document.getElementById('commitNowBtn');
   const statusBadge = document.getElementById('operatorStatusBadge');
 
-  if (noticeBox) noticeBox.classList.remove('hidden');
-  if (commitNowBtn) commitNowBtn.classList.remove('hidden');
+  if (noticeBox) noticeBox.classList.add('hidden');
+  if (commitNowBtn) commitNowBtn.classList.add('hidden');
   if (statusBadge) {
-    statusBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30';
-    statusBadge.textContent = 'در حال ذخیره خودکار...';
+    statusBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+    statusBadge.textContent = '✓ ذخیره دائمی در دستگاه';
   }
 
-  let timeLeft = 10;
-  if (countdownNumber) countdownNumber.textContent = `${timeLeft}s`;
-  if (countdownText) countdownText.textContent = `مشخصات با دیتابیس تطابق دارد. ذخیره خودکار در سیستم تا ۱۰ ثانیه دیگر...`;
+  if (_operatorAutoSaveTimer) {
+    clearInterval(_operatorAutoSaveTimer);
+    _operatorAutoSaveTimer = null;
+  }
 
-  if (_operatorAutoSaveTimer) clearInterval(_operatorAutoSaveTimer);
-
-  _operatorAutoSaveTimer = setInterval(() => {
-    timeLeft--;
-    if (countdownNumber) countdownNumber.textContent = `${timeLeft}s`;
-    if (countdownText) countdownText.textContent = `مشخصات با دیتابیس تطابق دارد. ذخیره خودکار در سیستم تا ${timeLeft} ثانیه دیگر...`;
-
-    if (timeLeft <= 0) {
-      clearInterval(_operatorAutoSaveTimer);
-      _operatorAutoSaveTimer = null;
-      commitOperatorNow();
-    }
-  }, 1000);
-
-  showToast(`مشخصات (${_pendingOperatorData.name}) در صفحه اصلی بارگذاری شد. ذخیره خودکار تا ۱۰ ثانیه دیگر...`, 'info');
+  showToast(`✓ مشخصات مجری (${_pendingOperatorData.name}) ثبت و به‌صورت دائمی در برنامه ذخیره شد.`, 'success');
 }
 window.applyMatchedPersonnelToHome = applyMatchedPersonnelToHome;
 
@@ -7822,8 +7919,8 @@ function setupPWAInstall() {
 document.addEventListener('DOMContentLoaded', () => {
   initThemeUI();
   updateCloudAuthUI();
-  loadOperatorProfile();
   loadPersonnelData();
+  loadOperatorProfile();
   populateOrgDropdowns();
   renderOrgManagementUI();
   updateLiveClock();
