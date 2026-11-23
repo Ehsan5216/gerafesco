@@ -122,6 +122,8 @@
     window.clearRebuildableSelection = window.clearRebuildableSelection || function() {};
     window.toggleRebuildableDropdown = window.toggleRebuildableDropdown || function() {};
     window.selectRebuildableOption = window.selectRebuildableOption || function() {};
+    window.cancelPwaExit = window.cancelPwaExit || function() {};
+    window.confirmPwaExit = window.confirmPwaExit || function() {};
     window.openActivityTimeModal = window.openActivityTimeModal || function() {};
     window.closeActivityTimeModal = window.closeActivityTimeModal || function() {};
     window.setModalQuickTime = window.setModalQuickTime || function() {};
@@ -713,6 +715,11 @@
     }
     html:not(.dark) .rebuildable-opt-desc {
       color: #334155 !important;
+    }
+    html:not(.dark) #pwaExitConfirmBtn {
+      background-color: #dc2626 !important;
+      border-color: #b91c1c !important;
+      color: #ffffff !important;
     }
     html:not(.dark) #pwaInstallBanner {
       background: linear-gradient(90deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%) !important;
@@ -3611,6 +3618,40 @@
             بعداً
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال تأیید خروج از نرم‌افزار PWA هنگام زدن دکمه برگشت در صفحه اصلی -->
+  <div id="pwaExitConfirmModal" onclick="if(event.target === this) cancelPwaExit()" class="hidden fixed inset-0 z-[1100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-5 space-y-4 text-right">
+      <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center shrink-0 text-amber-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-sm sm:text-base font-extrabold text-slate-100">خروج از برنامه</h3>
+          <p class="text-[11px] text-slate-400 mt-0.5">تأیید خروج از نرم‌افزار ثبت فعالیت‌ها</p>
+        </div>
+      </div>
+
+      <p class="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
+        آیا مطمئن هستید که می‌خواهید از برنامه خارج شوید؟
+      </p>
+
+      <div id="pwaExitUnsavedNotice" class="hidden p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/40 text-[11px] text-amber-200 font-semibold leading-relaxed">
+        توجه: فعالیت‌ها یا اطلاعات ثبت‌نشده‌ای در فرم فعلی وجود دارد.
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5 pt-1">
+        <button type="button" id="pwaExitStayBtn" onclick="cancelPwaExit()" class="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-slate-700 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer">
+          ماندن در برنامه
+        </button>
+        <button type="button" id="pwaExitConfirmBtn" onclick="confirmPwaExit()" class="py-2.5 px-3 bg-red-600 hover:bg-red-500 active:scale-95 text-white border border-red-500 rounded-xl text-xs sm:text-sm font-extrabold shadow-lg shadow-red-900/30 transition cursor-pointer">
+          بله، خروج
+        </button>
       </div>
     </div>
   </div>

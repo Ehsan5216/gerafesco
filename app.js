@@ -7365,6 +7365,155 @@ function closeModal(id) {
 }
 
 // ==========================================
+// محافظ دکمه برگشت (Back) در حالت PWA و مرورگر
+// ==========================================
+window._pwaAllowExit = false;
+window._pwaGuardGestured = false;
+window._pwaExitResetTimer = null;
+
+function ensurePwaHistoryGuard(withGesture = false) {
+  try {
+    if (window._pwaAllowExit) return;
+    const st = window.history.state;
+    if (!st || !st.pwaGuard) {
+      window.history.replaceState({ pwaGuard: 'base' }, '', window.location.href);
+      window.history.pushState({ pwaGuard: 'active', gestured: !!withGesture }, '', window.location.href);
+      if (withGesture) window._pwaGuardGestured = true;
+    } else if (withGesture && !window._pwaGuardGestured) {
+      window._pwaGuardGestured = true;
+      window.history.pushState({ pwaGuard: 'active', gestured: true }, '', window.location.href);
+    } else if (st.pwaGuard === 'base') {
+      window.history.pushState({ pwaGuard: 'active', gestured: !!withGesture }, '', window.location.href);
+      if (withGesture) window._pwaGuardGestured = true;
+    }
+  } catch (e) {}
+}
+
+function openPwaExitConfirmModal() {
+  const modal = document.getElementById('pwaExitConfirmModal');
+  if (!modal) return;
+  const unsavedNotice = document.getElementById('pwaExitUnsavedNotice');
+  if (unsavedNotice) {
+    const hasActivities = !!(window.AppState && Array.isArray(window.AppState.addedActivities) && window.AppState.addedActivities.length > 0);
+    const hasAsett = !!(document.getElementById('asettInput')?.value.trim());
+    const hasPhotos = !!(window.AppState && Array.isArray(window.AppState.capturedPhotos) && window.AppState.capturedPhotos.length > 0);
+    if (hasActivities || hasAsett || hasPhotos) {
+      unsavedNotice.classList.remove('hidden');
+    } else {
+      unsavedNotice.classList.add('hidden');
+    }
+  }
+  modal.classList.remove('hidden');
+}
+
+function cancelPwaExit() {
+  window._pwaAllowExit = false;
+  if (window._pwaExitResetTimer) {
+    clearTimeout(window._pwaExitResetTimer);
+    window._pwaExitResetTimer = null;
+  }
+  closeModal('pwaExitConfirmModal');
+  ensurePwaHistoryGuard(true);
+}
+
+function confirmPwaExit() {
+  window._pwaAllowExit = true;
+  closeModal('pwaExitConfirmModal');
+
+  try { window.close(); } catch (e) {}
+  try { window.history.back(); } catch (e) {}
+
+  if (window._pwaExitResetTimer) clearTimeout(window._pwaExitResetTimer);
+  setTimeout(() => {
+    if (!document.hidden) {
+      showToast('تأیید شد؛ برای بستن کامل برنامه، یک‌بار دیگر دکمه برگشت گوشی را فشار دهید.', 'info');
+    }
+  }, 260);
+
+  // اگر کاربر بعد از تأیید منصرف شد و در برنامه ماند، بعد از ۵ ثانیه محافظ دوباره فعال شود
+  window._pwaExitResetTimer = setTimeout(() => {
+    window._pwaAllowExit = false;
+    window._pwaGuardGestured = false;
+    ensurePwaHistoryGuard(false);
+  }, 5000);
+}
+
+function initPwaBackGuard() {
+  if (window._pwaBackGuardInitialized) return;
+  window._pwaBackGuardInitialized = true;
+
+  ensurePwaHistoryGuard(false);
+
+  const armOnGesture = () => {
+    const exitModal = document.getElementById('pwaExitConfirmModal');
+    if (exitModal && !exitModal.classList.contains('hidden')) return;
+    if (!window._pwaAllowExit) {
+      ensurePwaHistoryGuard(true);
+    }
+  };
+  document.addEventListener('pointerdown', armOnGesture, { capture: true, passive: true });
+  document.addEventListener('keydown', armOnGesture, { capture: true, passive: true });
+
+  window.addEventListener('popstate', (event) => {
+    if (window._pwaAllowExit) return;
+
+    // عبور خودکار از وضعیت پیش از تعامل کاربر به وضعیت پایه
+    if (event.state && event.state.pwaGuard === 'active' && !event.state.gestured) {
+      try { window.history.back(); } catch (e) {}
+      return;
+    }
+
+    // اگر پنجره تأیید خروج باز است و کاربر دوباره بک زد، اجازه خروج بده
+    const exitModal = document.getElementById('pwaExitConfirmModal');
+    if (exitModal && !exitModal.classList.contains('hidden')) {
+      window._pwaAllowExit = true;
+      exitModal.classList.add('hidden');
+      try { window.close(); } catch (e) {}
+      try { window.history.back(); } catch (e) {}
+      return;
+    }
+
+    // اگر مودال دیگری باز است، ابتدا همان مودال بسته شود
+    const openModalClosers = [
+      ['aboutSystemModal', () => (typeof window.closeAboutSystemPage === 'function' ? window.closeAboutSystemPage() : closeModal('aboutSystemModal'))],
+      ['qrScannerModal', () => (typeof closeQrScannerModal === 'function' ? closeQrScannerModal() : closeModal('qrScannerModal'))],
+      ['photoViewerModal', () => (typeof closePhotoViewerModal === 'function' ? closePhotoViewerModal() : closeModal('photoViewerModal'))],
+      ['stopwatchModal', () => (typeof closeStopwatchModal === 'function' ? closeStopwatchModal() : closeModal('stopwatchModal'))],
+      ['activityTimeModal', () => (typeof closeActivityTimeModal === 'function' ? closeActivityTimeModal() : closeModal('activityTimeModal'))],
+      ['persianCalendarModal', () => (typeof closePersianCalendarModal === 'function' ? closePersianCalendarModal() : closeModal('persianCalendarModal'))],
+      ['analogClockModal', () => (typeof closeAnalogClockModal === 'function' ? closeAnalogClockModal() : closeModal('analogClockModal'))],
+      ['reportDetailModal', () => closeModal('reportDetailModal')],
+      ['assetEditModal', () => closeModal('assetEditModal')],
+      ['assetAddModal', () => closeModal('assetAddModal')],
+      ['editAdminModal', () => closeModal('editAdminModal')],
+      ['loginModal', () => closeModal('loginModal')],
+      ['personnelModal', () => closeModal('personnelModal')],
+      ['pwaInstallModal', () => closeModal('pwaInstallModal')]
+    ];
+
+    for (const [id, closeFn] of openModalClosers) {
+      const el = document.getElementById(id);
+      if (el && !el.classList.contains('hidden')) {
+        closeFn();
+        ensurePwaHistoryGuard(true);
+        return;
+      }
+    }
+
+    // اگر در پنل مدیریت هستیم، با بک به صفحه اصلی برگردیم
+    const adminSec = document.getElementById('adminViewSection');
+    if (adminSec && !adminSec.classList.contains('hidden') && typeof switchToHomeView === 'function') {
+      switchToHomeView();
+      ensurePwaHistoryGuard(true);
+      return;
+    }
+
+    // در صفحه اصلی: نمایش مودال تأیید خروج پیش از خروج از برنامه PWA
+    openPwaExitConfirmModal();
+  });
+}
+
+// ==========================================
 // ۲۱. آماده‌سازی PWA و نصب روی موبایل و رایانه
 // ==========================================
 function handlePWAInstallClick() {
@@ -7686,6 +7835,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateNetworkStatusIndicator();
   updatePendingQueueCount();
   setupPWAInstall();
+  initPwaBackGuard();
   initAssetRebuildables().then(() => populateAsettDatalist());
 
   const graphForm = document.getElementById('graphRegistrationForm');
@@ -9119,6 +9269,8 @@ window.openQrScannerModal = openQrScannerModal;
 window.closeQrScannerModal = closeQrScannerModal;
 window.openModal = openModal;
 window.closeModal = closeModal;
+window.cancelPwaExit = cancelPwaExit;
+window.confirmPwaExit = confirmPwaExit;
 window.toggleTheme = toggleTheme;
 window.updateGPSLocation = updateGPSLocation;
 window.startAutoGPS = startAutoGPS;
